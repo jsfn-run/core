@@ -1,6 +1,6 @@
 {
-  "name": "node-lambdas",
-  "version": "1.0.0",
+  "name": "@node-lambdas/core",
+  "version": "0.0.0-autorelease",
   "type": "module",
   "main": "./index.js",
   "repository": {
