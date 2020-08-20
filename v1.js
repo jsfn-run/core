@@ -17,7 +17,7 @@ export class V1 extends HttpServer {
 
   onPrepare(request, response) {
     const { input, output } = this.configuration;
-    console.log(input, output);
+
     request.input = input;
     response.output = output;
   }

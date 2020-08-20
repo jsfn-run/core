@@ -15,12 +15,5 @@
     "name": "Darlan Alves",
     "email": "me@darlanalv.es"
   },
-  "devDependencies": {
-    "semantic-release": "^17.1.1"
-  },
-  "release": {
-    "branches": [
-      "master"
-    ]
-  }
+  "devDependencies": {}
 }
