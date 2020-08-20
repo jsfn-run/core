@@ -199,8 +199,11 @@ export class HttpServer {
   }
 
   logRequest(response, responseBody) {
-    const { url, body, id } = response.request;
-    const bodyAsString = serialize(body);
-    console.log('[info]', timestamp(), id, [String(url), bodyAsString, response.statusCode, responseBody]);
+    const { url, body, id, input, output } = response.request;
+
+    const inputBody = serialize(body);
+    const outputBody = serialize(responseBody);
+
+    console.log('[info]', timestamp(), id, [String(url), inputBody, response.statusCode, outputBody]);
   }
 }
