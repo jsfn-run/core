@@ -1,4 +1,4 @@
-import { createServer } from 'http';
+import { createServer, request as post } from 'http';
 import { Format, uid, toJson, serialize, tryToParseJson, timestamp, HttpMethod as Http } from './common.js';
 
 /**
@@ -19,17 +19,22 @@ export class HttpServer {
       const { method } = request;
       switch (true) {
         case method === Http.Options:
-          return this.sendCorsPreflight(request, response);
+          this.sendCorsPreflight(request, response);
+          break;
 
         case method === Http.Get:
-          return this.sendLambdaDocumentation(request, response);
+          this.sendLambdaDocumentation(request, response);
+          break;
 
         case method !== Http.Post:
-          return this.sendMethodNotAllowed(request, response);
+          this.sendMethodNotAllowed(request, response);
+          break;
 
         default:
-          return await this.executeLambda(request, response);
+          return this.executeLambda(request, response);
       }
+
+      this.track(request, response);
     } catch (error) {
       this.logError(request.id, error);
       response.send(error);
@@ -71,7 +76,7 @@ export class HttpServer {
   }
 
   sendLambdaDocumentation(request, response) {
-    const host = request.headers['host'];
+    const host = request.headers['host'] || '';
 
     response.setHeader(
       'Location',
@@ -102,6 +107,7 @@ export class HttpServer {
     const send = (value) => {
       value = this.writeResponse(response, value);
       this.logRequest(response, value);
+      this.track(response.request, response);
     };
 
     const onError = (error) => {
@@ -199,11 +205,35 @@ export class HttpServer {
   }
 
   logRequest(response, responseBody) {
-    const { url, body, id, input, output } = response.request;
+    const { url, body, id } = response.request;
 
     const inputBody = serialize(body);
     const outputBody = serialize(responseBody);
 
     console.log('[info]', timestamp(), id, [String(url), inputBody, response.statusCode, outputBody]);
+  }
+
+  track(request, response) {
+    if (!process.env.GA_TRACKING_ID) return;
+
+    const { host } = request.headers;
+    const { url, method } = request;
+    const data = {
+      v: '1',
+      tid: process.env.GA_TRACKING_ID,
+      cid: '1',
+      category: host,
+      action: String(url),
+      label: method,
+      value: response.statusCode,
+    };
+
+    try {
+      const http = post('http://www.google-analytics.com/collect', { method: 'POST' });
+      http.write(JSON.stringify(data));
+      http.end();
+    } catch (error) {
+      this.logError(null, error);
+    }
   }
 }

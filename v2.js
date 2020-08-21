@@ -1,4 +1,5 @@
 import { HttpServer } from './http.js';
+import { request as post } from 'http';
 
 /**
  * @param {Format} configuration.input
@@ -36,7 +37,7 @@ export class V2 extends HttpServer {
     if (!action) return;
 
     const { input, output } = action;
-    request.options = request.url.searchParams;
+    request.options = Object.fromEntries(request.url.searchParams.entries());
     request.action = action;
     request.input = input;
     response.output = output;
@@ -57,5 +58,34 @@ export class V2 extends HttpServer {
 
   getConfiguration(configuration) {
     return configuration;
+  }
+
+  track(request, response) {
+    // if (!process.env.GA_TRACKING_ID) return;
+
+    const serialize = (o) => Object.entries(o)
+      .filter(([key]) => key !== 'handler')
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+
+    const { host } = request.headers;
+    const { url, method } = request;
+    const data = {
+      v: '1',
+      tid: process.env.GA_TRACKING_ID,
+      cid: '1',
+      category: `${method} ${host} ${url}`,
+      action: serialize(request.action),
+      label: serialize(request.options),
+      value: response.statusCode,
+    };
+
+    try {
+      const http = post('http://www.google-analytics.com/collect', { method: 'POST' });
+      http.write(JSON.stringify(data));
+      http.end();
+    } catch (error) {
+      this.logError(null, error);
+    }
   }
 }
