@@ -63,7 +63,7 @@ export class V2 extends HttpServer {
   track(request, response) {
     // if (!process.env.GA_TRACKING_ID) return;
 
-    const serialize = (o) => Object.entries(o)
+    const serialize = (o = {}) => Object.entries(o)
       .filter(([key]) => key !== 'handler')
       .map(([key, value]) => `${key}: ${value}`)
       .join(', ');
