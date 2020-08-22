@@ -55,20 +55,25 @@ export class HttpServer {
     return this.onRun(request, response);
   }
 
-  /**
-   * @param {*} request
-   * @param {*} response
-   * @abstract
-   */
-  onPrepare() { }
+  onPrepare() {}
+  onRun() {}
 
-  /**
-   * @param {*} request
-   * @param {*} response
-   * @abstract
-   */
-  onRun(request, response) {
-    request.pipe(response);
+  onPipe(response, value) {
+    response.header('x-next', value);
+  }
+
+  onError(response, error) {
+    this.logError(response.id, error);
+    response.writeHead(500);
+    response.end('');
+  }
+
+  onSend(response, value) {
+    const body = this.serialize(value, response.output);
+    response.end(body);
+
+    this.logRequest(response, body);
+    this.track(response.request, response);
   }
 
   sendMethodNotAllowed(_, response) {
@@ -109,47 +114,39 @@ export class HttpServer {
 
   async augmentResponse(response) {
     response.header = (name, value) => (response.setHeader(name, value), response);
+    response.send = (status, body) => this.writeResponse(response, status, body);
+    response.reject = (message) => this.writeResponse(response, 400, String(message || 'Invalid input') + '\n');
+    response.pipeTo = (value) => this.onPipe(response, value);
+  }
 
-    const send = (value) => {
-      value = this.writeResponse(response, value);
-      this.logRequest(response, value);
-      this.track(response.request, response);
-    };
+  writeResponse(response, status, body) {
+    response.header('X-Trace-Id', response.id);
 
-    const onError = (error) => {
-      this.logError(response.id, error);
-      response.writeHead(500);
-      send('');
-    };
+    if (body === undefined && typeof status !== 'number') {
+      body = status;
+      status = 200;
+    }
 
-    response.send = function (status, body = '') {
-      response.header('X-Trace-Id', response.id);
+    if (body instanceof Promise) {
+      body.then(
+        (value) => this.onSend(response, value),
+        (error) => this.onError(response, error),
+      );
+      return;
+    }
 
-      if (arguments.length === 1) {
-        body = status;
-        status = 200;
-      }
+    if (body instanceof Error) {
+      this.onError(response, body);
+      return;
+    }
 
-      if (body instanceof Promise) {
-        body.then(send, onError);
-        return;
-      }
+    if (arguments.length === 2 || typeof status === 'number') {
+      response.writeHead(status);
+      this.onSend(response, body);
+      return;
+    }
 
-      if (status instanceof Error) {
-        onError(status);
-        return;
-      }
-
-      if (arguments.length === 2 || typeof status === 'number') {
-        response.writeHead(status);
-        send(body);
-        return;
-      }
-
-      send(status);
-    };
-
-    response.reject = (message) => response.send(400, String(message || 'Invalid input') + '\n');
+    this.onSend(response, status);
   }
 
   async readRequest(request) {
@@ -183,13 +180,6 @@ export class HttpServer {
 
   setCorsHeaders(_, response) {
     response.setHeader('access-control-allow-origin', '*');
-  }
-
-  writeResponse(response, value) {
-    const body = this.serialize(value, response.output);
-    response.end(body);
-
-    return body;
   }
 
   serialize(value, format) {
