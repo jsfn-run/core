@@ -19,17 +19,20 @@ export class V2 extends HttpServer {
 
     const { actions } = this.configuration;
     this.actions = actions;
+    this.setDefaultAction();
+  }
 
-    Object.keys(actions).some(actionName => {
-      if (actions[actionName].default) {
-        actions.default = actions[actionName];
+  setDefaultAction() {
+    Object.keys(this.actions).some(actionName => {
+      if (this.actions[actionName].default) {
+        this.actions.default = this.actions[actionName];
         return true;
       }
     });
   }
 
   onPrepare(request, response) {
-    request.url = new URL('http://local' + request.url);
+    request.url = new URL('http://localhost' + request.url);
 
     const actionName = request.url.pathname.slice(1) || 'default';
     const action = this.actions[actionName] || null;
@@ -61,7 +64,7 @@ export class V2 extends HttpServer {
   }
 
   track(request, response) {
-    // if (!process.env.GA_TRACKING_ID) return;
+    if (!process.env.GA_TRACKING_ID) return;
 
     const serialize = (o = {}) => Object.entries(o)
       .filter(([key]) => key !== 'handler')

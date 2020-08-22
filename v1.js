@@ -23,11 +23,6 @@ export class V1 extends HttpServer {
   }
 
   onRun(request, response) {
-    if (request.body === null && request.input === Format.Json) {
-      response.reject('Invalid JSON');
-      return;
-    }
-
     return this.handler(request, response);
   }
 

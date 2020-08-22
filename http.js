@@ -46,6 +46,12 @@ export class HttpServer {
     this.onPrepare(request, response);
 
     await this.prepareInputAndOutput(request, response);
+
+    if (request.body === null && request.input === Format.Json) {
+      response.reject('Invalid JSON');
+      return null;
+    }
+
     return this.onRun(request, response);
   }
 
