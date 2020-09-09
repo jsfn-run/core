@@ -11,7 +11,7 @@ export const lambda = (configuration, main) => new V1(configuration, main);
 export class V1 extends HttpServer {
   constructor(configuration, handler) {
     super();
-    this.configuration = this.getConfiguration(configuration);
+    this.configuration = configuration;
     this.handler = handler;
   }
 
@@ -26,7 +26,53 @@ export class V1 extends HttpServer {
     return this.handler(request, response);
   }
 
-  getConfiguration(configuration) {
-    return configuration;
+  describeApi() {
+    const { input, output } = this.configuration;
+    const defaultAction = { input, output, credentials: [], options: {} };
+
+    return [defaultAction];
+  }
+
+  track(request, response) {
+    console.log('track');
+    if (!process.env.GA_TRACKING_ID) return;
+
+    const { host } = request.headers;
+    const { url, method } = request;
+    let event = {};
+
+    if (method === 'POST') {
+      event = {
+        t: 'event',
+        ec: host,
+        ea: method + ' ' + String(url),
+        el: response.statusCode,
+        ev: '',
+      };
+    } else {
+      event = {
+        t: 'pageview',
+        dh: host,
+        dp: String(url),
+        dt: method,
+      };
+    }
+
+    const data = {
+      v: '1',
+      tid: process.env.GA_TRACKING_ID,
+      cid: '2',
+      ...event,
+    };
+
+    console.log(data);
+    try {
+      const body = String(new URLSearchParams(Object.entries(data)));
+      const http = post('http://www.google-analytics.com/collect', { method: 'POST' });
+      http.write(body);
+      http.end();
+    } catch (error) {
+      this.logError(null, error);
+    }
   }
 }
