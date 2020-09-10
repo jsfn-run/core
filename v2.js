@@ -35,6 +35,7 @@ export class V2 extends HttpServer {
         credentials: credentials || [],
         options: options || {},
         default: value.default,
+        description: value.description || '',
       };
 
       actions.push(action);
