@@ -30,8 +30,8 @@ export class V2 extends HttpServer {
       const { input, output, credentials, options } = value;
       const action = {
         name: key,
-        input: input || 'default',
-        output: output || 'default',
+        input: input || 'raw',
+        output: output || 'raw',
         credentials: credentials || [],
         options: options || {},
         default: value.default,

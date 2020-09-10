@@ -4,6 +4,7 @@ export const Format = {
   Text: 'text',
   Json: 'json',
   Buffer: 'buffer',
+  Raw: 'raw',
 };
 
 export const HttpMethod = {

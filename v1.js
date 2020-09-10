@@ -28,7 +28,7 @@ export class V1 extends HttpServer {
 
   describeApi() {
     const { input, output } = this.configuration;
-    const defaultAction = { input, output, credentials: [], options: {} };
+    const defaultAction = { input: input || 'raw', output: output || 'raw', credentials: [], options: {} };
 
     return [defaultAction];
   }
