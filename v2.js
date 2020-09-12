@@ -69,7 +69,9 @@ export class V2 extends HttpServer {
     request.credentials = {};
     response.output = output;
 
-    (action.credentials || []).forEach((key) => (request.credentials[key] = request.headers['Fn-' + key]));
+    (action.credentials || []).forEach(
+      (key) => (request.credentials[key] = request.headers['fn-' + key.toLowerCase()]),
+    );
   }
 
   onRun(request, response) {

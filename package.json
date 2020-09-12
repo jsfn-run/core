@@ -3,6 +3,7 @@
   "version": "0.0.0-autorelease",
   "type": "module",
   "main": "./index.js",
+  "typings": "typings.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/node-lambdas/core.git"
@@ -15,5 +16,7 @@
     "name": "Darlan Alves",
     "email": "me@darlanalv.es"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^14.10.1"
+  }
 }

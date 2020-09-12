@@ -9,10 +9,9 @@ import { HttpServer } from './http.js';
 export const lambda = (configuration, main) => new V1(configuration, main);
 
 export class V1 extends HttpServer {
-  constructor(configuration, handler) {
+  constructor(configuration) {
     super();
     this.configuration = configuration;
-    this.handler = handler;
   }
 
   onPrepare(request, response) {
@@ -23,7 +22,7 @@ export class V1 extends HttpServer {
   }
 
   onRun(request, response) {
-    return this.handler(request, response);
+    return this.configuration.handler(request, response);
   }
 
   describeApi() {

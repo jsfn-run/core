@@ -4,15 +4,10 @@ export { Format, uid } from './common.js';
 export { Console } from './console.js';
 export { HttpStatus } from './http.js';
 
-export function lambda(configuration, main) {
-  if (!main && typeof configuration === 'function') {
-    main = configuration;
-    configuration = {};
-  }
-
+export function lambda(configuration) {
   switch (configuration.version || 1) {
     case 1:
-      return v1(configuration, main);
+      return v1(configuration);
 
     case 2:
       return v2(configuration);
