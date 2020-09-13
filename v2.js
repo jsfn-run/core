@@ -69,9 +69,18 @@ export class V2 extends HttpServer {
     request.credentials = {};
     response.output = output;
 
-    (action.credentials || []).forEach(
-      (key) => (request.credentials[key] = request.headers['fn-' + key.toLowerCase()]),
-    );
+    this.readCredentials(request, action);
+  }
+
+  readCredentials(request, action) {
+    const requiredCredentials = action.credentials || [];
+
+    if (requiredCredentials.length && request.headers.authorization) {
+      const token = request.headers.authorization.replace(/\s*Bearer\s*/, '').trim();
+      const json = Buffer.from(token, 'base64').toString('utf-8');
+      const credentials = JSON.parse(json);
+      requiredCredentials.forEach((key) => (request.credentials[key] = credentials[key]));
+    }
   }
 
   onRun(request, response) {
