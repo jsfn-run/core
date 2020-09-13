@@ -267,6 +267,7 @@ export class HttpServer {
 
   setCorsHeaders(_, response) {
     response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Headers', 'content-type, authorization');
   }
 
   serialize(value, format) {

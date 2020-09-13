@@ -1,6 +1,5 @@
 import { HttpServer } from './http.js';
 import { request as post } from 'http';
-import { URLSearchParams } from 'url';
 
 /**
  * @param {Format} configuration.input
