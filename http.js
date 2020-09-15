@@ -1,4 +1,5 @@
-import { createServer, request as post } from 'http';
+import { createServer, request as http } from 'http';
+import { request as https } from 'https';
 import { Format, uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.js';
 import { Console } from './console.js';
 
@@ -289,9 +290,37 @@ export class HttpServer {
   }
 
   logRequest(response) {
-    const { url, body, id } = response.request;
+    const { url, id } = response.request;
 
     Console.info('[info]', timestamp(), id, String(url), response.statusCode);
     this.track(response.request, response);
   }
+}
+
+function onFetch(resolve, reject) {
+  return (response) => {
+    if (response.statusCode !== 200) {
+      reject(new Error(response.statusCode));
+      return;
+    }
+
+    resolve(response);
+  };
+}
+
+export function fetch(url, options) {
+  if (typeof url === 'string') {
+    url = new URL(url);
+  }
+
+  return new Promise((resolve, reject) => {
+    const fn = url.protocol === 'http:' ? http : https;
+    const request = fn(url, options, onFetch(resolve, reject));
+
+    if (options?.body) {
+      request.write(options.body);
+    }
+
+    request.end();
+  });
 }

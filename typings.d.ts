@@ -64,13 +64,13 @@ declare module '@node-lambdas/core' {
 
   export function uid(): string;
 
-  export interface Console {
+  export interface ColorConsole {
     log(...args: any[]): void;
     info(...args: any[]): void;
     error(...args: any[]): void;
   }
 
-  export const Console: Console;
+  export var Console: ColorConsole;
 
   export const HttpStatus: {
     Continue: 100;
@@ -137,4 +137,12 @@ declare module '@node-lambdas/core' {
     NotExtended: 510;
     NetworkAuthenticationRequired: 511;
   };
+
+  export interface FetchOptions {
+    headers?: Record<string, string>;
+    method?: string;
+    timeout?: number;
+    body?: any;
+  }
+  export function fetch(url: string | URL, options?: FetchOptions): Promise<any>;
 }
