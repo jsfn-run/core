@@ -179,7 +179,7 @@ export class HttpServer {
 
     response.setHeader(
       'Location',
-      'https://jsfn.run/?' + (host.endsWith('.jsfn.run') ? host.replace('.jsfn.run', '') : ''),
+      'https://jsfn.run/?fn=' + (host.endsWith('.jsfn.run') ? host.replace('.jsfn.run', '') : ''),
     );
 
     response.writeHead(302);
