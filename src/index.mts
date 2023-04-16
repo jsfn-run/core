@@ -3,8 +3,9 @@ import { lambda as v2, Configuration as V2Configuration, V2Request } from './v2.
 
 export { Format, uid } from './common.mjs';
 export { Console } from './console.mjs';
-export { Request, Response } from './http.mjs';
-export { V1Configuration, V2Configuration, V2Request };
+import { Request, Response } from './http.mjs';
+
+export { V1Configuration, V2Configuration, V2Request, Response as V2Response, Request, Response };
 
 export function lambda(configuration: V1Configuration): void;
 export function lambda(configuration: V2Configuration): void;

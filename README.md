@@ -2,6 +2,28 @@
 
 The code behind all node-lambdas
 
+## Example
+
+The most basic function is just a single file, called `index.js`.
+
+```ts
+import { V2Request, V2Response } from '@node-lambdas/core';
+
+// index.js
+export default {
+  version: 2,
+  actions: {
+    echo: {
+      default: true,
+      handler: (input: V2Request, output: V2Response) => input.pipe(output),
+    },
+  },
+};
+```
+
+This function is invoked calling `POST https://echo.jsfn.run/` with any content.
+The data is just sent back as a stream.
+
 ## Input/Output
 
 A lambda handler function will receive two arguments, `input` and `output`, which are just Node.js [request](https://nodejs.org/api/http.html#http_class_http_incomingmessage) and [response](https://nodejs.org/api/http.html#http_class_http_serverresponse) objects from an incoming request.
@@ -35,10 +57,10 @@ In `v2`, options are parsed from the query string parameters sent by the incomin
 
 For example, consider a call to function `foo` with `POST /action?alice=1&bob=2`. Then `request.options` will be an object like `{ alice: 1, bob: 2 }`
 
-#### `request.url`
+#### `request.parsedUrl`
 
-In `v1` is just a string.
-In `v2`, instead of a string, this is set to an instance of [URL](https://nodejs.org/api/url.html#url_the_whatwg_url_api) parsed from the incoming request URL.
+Since `v2`.
+This is set to an instance of [URL](https://nodejs.org/api/url.html#url_the_whatwg_url_api) parsed from `request.url`.
 
 ---
 
@@ -51,12 +73,6 @@ Accepts a configuration object and a simple handler function.
 ```javascript
 import { lambda, Format } from '@node-lambdas/core';
 
-const configuration = {
-  version: 1,
-  input: Format.Text,
-  output: Format.Json,
-};
-
 function main(input, output) {
   const textInput = input.body;
   const jsonOutput = { text: textInput };
@@ -64,7 +80,14 @@ function main(input, output) {
   output.send(jsonOutput);
 }
 
-lambda(configuration, main);
+const configuration = {
+  version: 1,
+  input: Format.Text,
+  output: Format.Json,
+  handler: main,
+};
+
+export default configuration;
 ```
 
 ### v2
@@ -97,7 +120,7 @@ const configuration = {
   },
 };
 
-lambda(configuration, main);
+export default configuration;
 ```
 
 ## Version history
@@ -108,5 +131,6 @@ First version. Just process input and send back an output.
 
 `v2`
 
-Add support for multiple actions and different input/output formats per action.
-Parses the incoming URL and adds `request.options`
+- Add support for multiple actions and different input/output formats per action.
+- Parses the incoming URL
+- adds `request.options`
