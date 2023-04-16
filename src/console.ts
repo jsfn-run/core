@@ -5,7 +5,13 @@ const ansiCodes = {
   reset: '\u001b[0m',
 };
 
-export const Console = {
+export interface ColorConsole {
+  log(...args: any[]): void;
+  info(...args: any[]): void;
+  error(...args: any[]): void;
+}
+
+export const Console: ColorConsole = {
   write(type, ...values) {
     console.log(ansiCodes[type], ...values, ansiCodes.reset);
   },

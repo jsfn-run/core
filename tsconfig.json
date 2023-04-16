@@ -1,6 +1,7 @@
 {
+  "extends": "@cloud-cli/typescript-config",
   "compilerOptions": {
-    "typeRoots": ["./node_modules/@types"],
-    "types": ["node"]
-  }
+    "outDir": "./dist"
+  },
+  "include": ["src/*.ts"]
 }
