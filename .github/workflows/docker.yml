@@ -1,6 +1,8 @@
 name: Build
 on:
-  - push
+  push:
+    branches:
+      - main
 
 jobs:
   build-and-publish-docker-image:
@@ -27,7 +29,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build code
-        run: npm run build
+        run: npm ci && npm run build
 
       - name: Build branch
         uses: docker/build-push-action@v4
