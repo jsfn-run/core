@@ -3,5 +3,13 @@
   "compilerOptions": {
     "outDir": "./dist"
   },
-  "include": ["src/*.ts"]
+  "include": [
+    "src/*.ts",
+    "src/index.mts",
+    "src/http.mts",
+    "src/console.mts",
+    "src/common.mts",
+    "src/v1.mts",
+    "src/v2.mts"
+  ]
 }

@@ -9,7 +9,7 @@ RUN cd /home/node && npm init -y && npm i @node-lambdas/core
 
 USER node
 WORKDIR /home/app
-ENTRYPOINT ["/usr/local/bin/node", "/home/node/index.js"]
+ENTRYPOINT ["/usr/local/bin/node", "/home/node/index.mjs"]
 
 ENV PATH "$PATH:/home/node/npm/bin:/home/app/node_modules/.bin"
 ENV FN_PATH "/home/app/index.js"

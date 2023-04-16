@@ -1,5 +1,5 @@
-import { Format } from './common.js';
-import { ActionHandler, HttpServer, Request, Response } from './http.js';
+import { Format } from './common.mjs';
+import { ActionHandler, HttpServer, Request, Response } from './http.mjs';
 
 export interface Configuration {
   version: 1;

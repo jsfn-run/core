@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse, createServer } from 'http';
-import { Format, uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.js';
-import { Console } from './console.js';
+import { Format, uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.mjs';
+import { Console } from './console.mjs';
 
 /*export interface ActionInput<T extends string | object | Buffer | undefined> {
   body: T;
@@ -203,7 +203,7 @@ export class HttpServer {
 
   async augmentResponse(response: Response) {
     response.header = (name: string, value: string) => (response.setHeader(name, value), response);
-    response.send = <T>(status: number | T, body?: T) => this.writeResponse(response, status, body);
+    response.send = (status: number | any, body?: any) => this.writeResponse(response, status, body);
     response.reject = (message: string) => this.writeResponse(response, 400, String(message || 'Invalid input') + '\n');
     response.pipeTo = (value: string) => this.onPipe(response, value);
   }

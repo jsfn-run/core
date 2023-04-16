@@ -1,9 +1,9 @@
-import { lambda as v1, Configuration as V1Configuration } from './v1.js';
-import { lambda as v2, Configuration as V2Configuration, V2Request } from './v2.js';
+import { lambda as v1, Configuration as V1Configuration } from './v1.mjs';
+import { lambda as v2, Configuration as V2Configuration, V2Request } from './v2.mjs';
 
-export { Format, uid } from './common.js';
-export { Console } from './console.js';
-export { Request, Response } from './http.js';
+export { Format, uid } from './common.mjs';
+export { Console } from './console.mjs';
+export { Request, Response } from './http.mjs';
 export { V1Configuration, V2Configuration, V2Request };
 
 export function lambda(configuration: V1Configuration): void;

@@ -1,4 +1,4 @@
-import { HttpServer, Request, Response, Action, ActionHandler } from './http.js';
+import { HttpServer, Request, Response, Action, ActionHandler } from './http.mjs';
 
 export interface Configuration {
   version: 2;
