@@ -1,4 +1,4 @@
-name: Create and publish a Docker image
+name: Create and publish a cloud function
 
 # Build and publish a Node function
 # Requires at least an org and image name to work correctly.
@@ -39,9 +39,8 @@ jobs:
 
       - name: Create Dockerfile
         run: |
-          echo 'FROM ghcr.io/node-lambdas/core' > Dockerfile
-          echo 'ADD . /home/app' >> Dockerfile
-          echo 'WORKDIR /home/app' >> Dockerfile
+          echo 'FROM ghcr.io/node-lambdas/core:latest' > Dockerfile
+          echo 'ADD . /home/node/app' >> Dockerfile
           echo 'RUN npm ci && npm run build' >> Dockerfile
 
           cat Dockerfile
