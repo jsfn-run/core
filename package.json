@@ -18,7 +18,8 @@
     "email": "me@darlanalv.es"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "echo true"
   },
   "devDependencies": {
     "@cloud-cli/prettier-config": "^1.0.0",
