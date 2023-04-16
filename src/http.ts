@@ -1,91 +1,89 @@
-import { createServer, request as http } from 'http';
-import { request as https } from 'https';
+import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { Format, uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.js';
 import { Console } from './console.js';
 
-// From https://github.com/nodejs/node/blob/master/lib/_http_server.js#L85
-export const HttpStatus = {
-  Continue: 100,
-  SwitchingProtocols: 101,
-  Processing: 102,
-  EarlyHints: 103,
-  OK: 200,
-  Created: 201,
-  Accepted: 202,
-  NonAuthoritativeInformation: 203,
-  NoContent: 204,
-  ResetContent: 205,
-  PartialContent: 206,
-  MultiStatus: 207,
-  AlreadyReported: 208,
-  IMUsed: 226,
-  MultipleChoices: 300,
-  MovedPermanently: 301,
-  Found: 302,
-  SeeOther: 303,
-  NotModified: 304,
-  UseProxy: 305,
-  TemporaryRedirect: 307,
-  PermanentRedirect: 308,
-  BadRequest: 400,
-  Unauthorized: 401,
-  PaymentRequired: 402,
-  Forbidden: 403,
-  NotFound: 404,
-  MethodNotAllowed: 405,
-  NotAcceptable: 406,
-  ProxyAuthenticationRequired: 407,
-  RequestTimeout: 408,
-  Conflict: 409,
-  Gone: 410,
-  LengthRequired: 411,
-  PreconditionFailed: 412,
-  PayloadTooLarge: 413,
-  URITooLong: 414,
-  UnsupportedMediaType: 415,
-  RangeNotSatisfiable: 416,
-  ExpectationFailed: 417,
-  ImaTeapot: 418,
-  MisdirectedRequest: 421,
-  UnprocessableEntity: 422,
-  Locked: 423,
-  FailedDependency: 424,
-  TooEarly: 425,
-  UpgradeRequired: 426,
-  PreconditionRequired: 428,
-  TooManyRequests: 429,
-  RequestHeaderFieldsTooLarge: 431,
-  UnavailableForLegalReasons: 451,
-  InternalServerError: 500,
-  NotImplemented: 501,
-  BadGateway: 502,
-  ServiceUnavailable: 503,
-  GatewayTimeout: 504,
-  HTTPVersionNotSupported: 505,
-  VariantAlsoNegotiates: 506,
-  InsufficientStorage: 507,
-  LoopDetected: 508,
-  BandwidthLimitExceeded: 509,
-  NotExtended: 510,
-  NetworkAuthenticationRequired: 511,
-};
+/*export interface ActionInput<T extends string | object | Buffer | undefined> {
+  body: T;
+  credentials?: Record<string, string>;
+  pipe<T>(next: T): T;
+}
 
-/**
- * @param {Format} configuration.input
- * @param {Format} configuration.output
- * @param {Function} main                         (input, output) => void;
- */
-export const lambda = (configuration) => new HttpServer(configuration);
+export interface ActionOutput {
+  reject(error: any): void;
+  header(name: string, value: string): void;
+  send(status: number, body?: string | Promise<any> | object): void;
+  send(body?: string | Promise<any> | object | Error): void;
+  pipeTo(nextCommand: string): void;
+}
+*/
+
+export class Request<T = any> extends IncomingMessage {
+  id: string;
+  input: Format;
+  body: T;
+}
+
+export class Response<T = any> extends ServerResponse {
+  id: string;
+  request: Request;
+  output: Format;
+  header: (name: string, value: string) => void;
+  send: (status: number | T, body?: T) => void;
+  reject: (message: string) => void;
+  pipeTo: (value: string) => void;
+}
+
+
+export interface ActionHandler<T extends string | object | Buffer | undefined> {
+  (input: Request<T>, output: Response<T>): void;
+}
+
+interface BaseAction {
+  default?: boolean;
+  credentials?: string[];
+  options?: Record<string, string>;
+  output?: Format;
+  description?: string;
+}
+
+interface JsonAction extends BaseAction {
+  input: Format.Json;
+  handler: ActionHandler<object>;
+}
+
+interface BufferAction extends BaseAction {
+  input: Format.Buffer;
+  handler: ActionHandler<Buffer>;
+}
+
+interface TextAction extends BaseAction {
+  input: Format.Text;
+  handler: ActionHandler<string>;
+}
+
+interface RawAction extends BaseAction {
+  input: Format.Raw;
+  handler: ActionHandler<undefined>;
+}
+
+export type Action = JsonAction | BufferAction | TextAction | RawAction;
 
 export class HttpServer {
+  server: any;
+
   constructor() {
     this.server = createServer((request, response) => this.dispatch(request, response));
     this.server.listen(process.env.PORT);
   }
 
-  async dispatch(request, response) {
+  onPrepare(_request: IncomingMessage, _response: ServerResponse) { }
+  onRun(_request: Request, _response: Response) { }
+  describeApi(): any { }
+
+  async dispatch(request: IncomingMessage, response: ServerResponse) {
     try {
       const { method } = request;
+
       switch (true) {
         case method === Http.Options && request.url === '/api':
           this.setCorsHeaders(request, response);
@@ -111,19 +109,19 @@ export class HttpServer {
           return this.executeLambda(request, response);
       }
 
-      this.track(request, response);
+      // this.track(request, response);
     } catch (error) {
-      this.logError(request.id, error);
+      this.logError((request as any).id, error);
       response.writeHead(500);
       response.end('Internal function error');
     }
   }
 
-  async executeLambda(request, response) {
-    this.setCorsHeaders(request, response);
-    this.onPrepare(request, response);
+  async executeLambda($request: IncomingMessage, $response: ServerResponse) {
+    this.setCorsHeaders($request, $response);
+    this.onPrepare($request, $response);
 
-    await this.prepareInputAndOutput(request, response);
+    const { request, response } = await this.prepareInputAndOutput($request, $response);
 
     if (request.body === null && request.input === Format.Json) {
       response.reject('Invalid JSON');
@@ -133,48 +131,46 @@ export class HttpServer {
     return this.onRun(request, response);
   }
 
-  onPrepare() {}
-  onRun() {}
-  describeApi() {}
-
-  onPipe(response, value) {
+  onPipe(response: Response, value: string) {
     response.header('x-next', value);
     response.end();
 
     this.logRequest(response);
   }
 
-  onError(response, error) {
+  onError(response: Response, error) {
     this.logError(response.id, error);
     response.writeHead(500);
     response.end('');
   }
 
-  onSend(response, value) {
+  onSend(response: Response, status: number, value: any) {
     const body = this.serialize(value, response.output);
+
+    response.writeHead(status);
     response.end(body);
 
-    this.logRequest(response, body);
+    this.logRequest(response);
   }
 
-  sendMethodNotAllowed(_, response) {
+  sendMethodNotAllowed(_request: IncomingMessage, response: ServerResponse) {
     response.setHeader('Connection', 'close');
     response.writeHead(405);
     response.end('');
   }
 
-  sendCorsPreflight(request, response) {
+  sendCorsPreflight(request: IncomingMessage, response: ServerResponse) {
     this.setCorsHeaders(request, response);
     response.end();
   }
 
-  sendHealthCheckResponse(request, response) {
+  sendHealthCheckResponse(_request: IncomingMessage, response: ServerResponse) {
     response.setHeader('Connection', 'close');
     response.writeHead(200);
     response.end();
   }
 
-  sendLambdaDocumentation(request, response) {
+  sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
     const host = request.headers['host'] || '';
 
     response.setHeader(
@@ -186,38 +182,43 @@ export class HttpServer {
     response.end();
   }
 
-  async prepareInputAndOutput(request, response) {
+  async prepareInputAndOutput($request: IncomingMessage, $response: ServerResponse) {
+    const request = $request as Request;
+    const response = $response as Response;
+
     request.id = response.id = uid();
     response.request = request;
 
     await this.augmentRequest(request);
     await this.augmentResponse(response);
+
+    return { request, response };
   }
 
-  async augmentRequest(request) {
+  async augmentRequest(request: Request) {
     if (request.method === Http.Post && !!request.input) {
       await this.readRequest(request);
     }
   }
 
-  async augmentResponse(response) {
-    response.header = (name, value) => (response.setHeader(name, value), response);
-    response.send = (status, body) => this.writeResponse(response, status, body);
-    response.reject = (message) => this.writeResponse(response, 400, String(message || 'Invalid input') + '\n');
-    response.pipeTo = (value) => this.onPipe(response, value);
+  async augmentResponse(response: Response) {
+    response.header = (name: string, value: string) => (response.setHeader(name, value), response);
+    response.send = <T>(status: number | T, body?: T) => this.writeResponse(response, status, body);
+    response.reject = (message: string) => this.writeResponse(response, 400, String(message || 'Invalid input') + '\n');
+    response.pipeTo = (value: string) => this.onPipe(response, value);
   }
 
-  writeResponse(response, status, body) {
+  writeResponse<T>(response: Response, status: number | T, body?: T) {
     response.header('X-Trace-Id', response.id);
 
-    if (body === undefined && typeof status !== 'number') {
-      body = status;
+    if (typeof body === 'undefined' && typeof status !== 'number') {
+      body = status as T;
       status = 200;
     }
 
     if (body instanceof Promise) {
       body.then(
-        (value) => this.onSend(response, value),
+        (value) => this.onSend(response, status as number, value),
         (error) => this.onError(response, error),
       );
       return;
@@ -228,20 +229,14 @@ export class HttpServer {
       return;
     }
 
-    if (arguments.length === 2 || typeof status === 'number') {
-      response.writeHead(status);
-      this.onSend(response, body);
-      return;
-    }
-
-    this.onSend(response, status);
+    this.onSend(response, status as number, body);
   }
 
   async readRequest(request) {
     return new Promise((resolve) => {
       let chunks = [];
 
-      request.on('data', (chunk) => chunks.push(chunk));
+      request.on('data', (chunk: any) => chunks.push(chunk));
       request.on('end', () => {
         const buffer = Buffer.concat(chunks);
         const inputFormat = request.input;
@@ -261,23 +256,23 @@ export class HttpServer {
             break;
         }
 
-        resolve();
+        resolve(null);
       });
     });
   }
 
-  setCorsHeaders(_, response) {
+  setCorsHeaders(_request: IncomingMessage, response: ServerResponse) {
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Headers', 'content-type, authorization');
   }
 
-  serialize(value, format) {
+  serialize(value: any, format: Format) {
     switch (format) {
       case Format.Json:
         return toJson(value);
 
       case Format.Text:
-        return value.toString ? value.toString('utf8') : String(value);
+        return value && value.toString ? value.toString('utf8') : String(value);
 
       case Format.Buffer:
       default:
@@ -289,10 +284,57 @@ export class HttpServer {
     Console.error('[error]', timestamp(), traceId, error);
   }
 
-  logRequest(response) {
+  logRequest(response: Response) {
     const { url, id } = response.request;
 
     Console.info('[info]', timestamp(), id, String(url), response.statusCode);
-    this.track(response.request, response);
+    // this.track(response.request, response);
   }
+
+  /*track(request, response) {
+    if (!process.env.GA_TRACKING_ID) return;
+
+    const { host } = request.headers;
+    const { url, method } = request;
+
+    const serialize = (o = {}) =>
+      Object.entries(o)
+        .filter(([key]) => key !== 'handler' && key !== 'default')
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+
+    let event;
+    if (request.action) {
+      event = {
+        t: 'event',
+        ec: host,
+        ea: request.actionName,
+        el: response.statusCode,
+        ev: serialize({ ...request.action, ...request.options }),
+      };
+    } else {
+      event = {
+        t: 'pageview',
+        dh: host,
+        dp: String(url),
+        dt: method,
+      };
+    }
+
+    const data = {
+      v: '1',
+      tid: process.env.GA_TRACKING_ID,
+      cid: '2',
+      ...event,
+    };
+
+    try {
+      const body = String(new URLSearchParams(Object.entries(data)));
+      const http = post('http://www.google-analytics.com/collect', { method: 'POST' });
+      http.write(body);
+      http.end();
+    } catch (error) {
+      this.logError(null, error);
+    }
+  }*/
 }

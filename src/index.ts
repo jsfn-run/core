@@ -1,88 +1,28 @@
-import { lambda as v1 } from './v1.js';
-import { lambda as v2 } from './v2.js';
+import { lambda as v1, Configuration as V1Configuration } from './v1.js';
+import { lambda as v2, Configuration as V2Configuration, V2Request } from './v2.js';
+
 export { Format, uid } from './common.js';
 export { Console } from './console.js';
-export { HttpStatus, fetch } from './http.js';
+export { Request, Response } from './http.js';
+export { V1Configuration, V2Configuration, V2Request };
 
-export function lambda(configuration: {
-  version: 1;
-  input?: Format;
-  output?: Format;
-  handler: ActionHandler<any>;
-}): void;
-
-export function lambda(configuration: {
-  version: 2; 
-  actions: Record<string, Action>
-}): void;
-
-export function lambda(configuration) {
+export function lambda(configuration: V1Configuration): void;
+export function lambda(configuration: V2Configuration): void;
+export function lambda(configuration: V1Configuration | V2Configuration) {
   switch (configuration.version || 1) {
     case 1:
-      return v1(configuration);
+      return v1(configuration as V1Configuration);
 
     case 2:
-      return v2(configuration);
+      return v2(configuration as V2Configuration);
   }
 }
 
-export enum Format {
-  Json = 'json',
-  Buffer = 'buffer',
-  Text = 'text',
-  Raw = 'raw',
-}
-
-export interface ActionInput<T extends string | object | Buffer | undefined> {
-  body: T;
-  credentials: Record<string, string>;
-  pipe<T>(next: T): T;
-}
-
-export interface ActionOutput {
-  reject(error: any): void;
-  header(name: string, value: string): void;
-  send(body?: string | Promise<any> | object | Error): void;
-  send(status: number, body?: string | Promise<any> | object): void;
-  pipeTo(nextCommand: string): void;
-}
-
-export interface ActionHandler<T extends string | object | Buffer | undefined> {
-  (input: ActionInput<T>, output: ActionOutput): void;
-}
-
-interface BaseAction {
-  default?: boolean;
-  credentials?: string[];
-  options?: Record<string, string>;
-  output?: Format;
-}
-
-interface JsonAction extends BaseAction {
-  input: Format.Json;
-  handler: ActionHandler<object>;
-}
-
-interface BufferAction extends BaseAction {
-  input: Format.Buffer;
-  handler: ActionHandler<Buffer>;
-}
-
-interface TextAction extends BaseAction {
-  input: Format.Text;
-  handler: ActionHandler<string>;
-}
-
-interface RawAction extends BaseAction {
-  input: Format.Raw;
-  handler: ActionHandler<undefined>;
-}
-
-export type Action = JsonAction | BufferAction | TextAction | RawAction;
 
 async function main() {
-  const fn = await import('/home/app/index.js');
-  lambda(fn);
+  // @ts-ignore
+  const fn = await import(process.env.FN_PATH);
+  lambda(fn.default);
 }
 
 main();

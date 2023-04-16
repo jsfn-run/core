@@ -11,4 +11,5 @@ WORKDIR /home/app
 ENTRYPOINT ["/usr/local/bin/node", "/home/node/index.js"]
 
 ENV PATH "$PATH:/home/node/npm/bin:/home/app/node_modules/.bin"
+ENV FN_PATH "/home/app/index.js"
 ENV PORT 8080
