@@ -1,6 +1,8 @@
 import { IncomingMessage, ServerResponse, createServer } from 'http';
-import { Format, uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.mjs';
+import { uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.mjs';
 import { Console } from './console.mjs';
+
+export type Format = 'json' | 'text' | 'buffer' | 'raw';
 
 /*export interface ActionInput<T extends string | object | Buffer | undefined> {
   body: T;
@@ -47,22 +49,22 @@ interface BaseAction {
 }
 
 interface JsonAction extends BaseAction {
-  input: Format.Json;
+  input: 'json';
   handler: ActionHandler<object>;
 }
 
 interface BufferAction extends BaseAction {
-  input: Format.Buffer;
+  input: 'buffer';
   handler: ActionHandler<Buffer>;
 }
 
 interface TextAction extends BaseAction {
-  input: Format.Text;
+  input: 'text';
   handler: ActionHandler<string>;
 }
 
 interface RawAction extends BaseAction {
-  input: Format.Raw;
+  input: 'raw';
   handler: ActionHandler<undefined>;
 }
 
@@ -123,7 +125,7 @@ export class HttpServer {
 
     const { request, response } = await this.prepareInputAndOutput($request, $response);
 
-    if (request.body === null && request.input === Format.Json) {
+    if (request.body === null && request.input === 'json') {
       response.reject('Invalid JSON');
       return null;
     }
@@ -242,15 +244,15 @@ export class HttpServer {
         const inputFormat = request.input;
 
         switch (inputFormat) {
-          case Format.Json:
+          case 'json':
             request.body = tryToParseJson(buffer.toString('utf8'));
             break;
 
-          case Format.Text:
+          case 'text':
             request.body = buffer.toString('utf8');
             break;
 
-          case Format.Buffer:
+          case 'buffer':
           default:
             request.body = buffer;
             break;
@@ -268,13 +270,13 @@ export class HttpServer {
 
   serialize(value: any, format: Format) {
     switch (format) {
-      case Format.Json:
+      case 'json':
         return toJson(value);
 
-      case Format.Text:
+      case 'text':
         return value && value.toString ? value.toString('utf8') : String(value);
 
-      case Format.Buffer:
+      case 'buffer':
       default:
         return Buffer.isBuffer(value) ? value : String(value);
     }

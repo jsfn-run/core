@@ -1,12 +1,5 @@
 import { randomBytes } from 'crypto';
 
-export enum Format {
-  Text = 'text',
-  Json = 'json',
-  Buffer = 'buffer',
-  Raw = 'raw',
-};
-
 export enum HttpMethod {
   Get = 'GET',
   Options = 'OPTIONS',

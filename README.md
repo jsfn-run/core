@@ -32,21 +32,21 @@ They have a few extra properties:
 
 #### `request.body`
 
-| input type    | request.body |
-| ------------- | ------------ |
-| Format.Text   | string       |
-| Format.Json   | object       |
-| Format.Buffer | Buffer       |
-| - not set -   | undefined    |
+| input type  | request.body |
+| ----------- | ------------ |
+| text        | string       |
+| json        | object       |
+| buffer      | Buffer       |
+| - not set - | undefined    |
 
 #### response output (via output.send(response))
 
-| output type   | response body |
-| ------------- | ------------- |
-| Format.Text   | string        |
-| Format.Json   | JSON string   |
-| Format.Buffer | binary output |
-| - not set -   | binary output |
+| output type | response body |
+| ----------- | ------------- |
+| text        | string        |
+| json        | JSON string   |
+| buffer      | binary output |
+| - not set - | binary output |
 
 In `v1` only one input/output format can be specified for the entire server
 In `v2`, each action can specify a different input/input/output format.
@@ -71,8 +71,6 @@ This is set to an instance of [URL](https://nodejs.org/api/url.html#url_the_what
 Accepts a configuration object and a simple handler function.
 
 ```javascript
-import { lambda, Format } from '@node-lambdas/core';
-
 function main(input, output) {
   const textInput = input.body;
   const jsonOutput = { text: textInput };
@@ -82,8 +80,8 @@ function main(input, output) {
 
 const configuration = {
   version: 1,
-  input: Format.Text,
-  output: Format.Json,
+  input: 'text',
+  output: 'json',
   handler: main,
 };
 
@@ -107,14 +105,14 @@ const configuration = {
   actions: {
     encode: {
       default: true,
-      input: Format.Text,
-      output: Format.Json,
+      input: 'text',
+      output: 'json',
       handler: (input, output) => output.send(encode(input.body)),
     },
 
     decode: {
-      input: Format.Json,
-      output: Format.Text,
+      input: 'json',
+      output: 'text',
       handler: (input, output) => output.send(decode(input.body)),
     },
   },

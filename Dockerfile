@@ -11,5 +11,5 @@ USER node
 WORKDIR /home/node/app
 ENTRYPOINT ["/usr/local/bin/node", "/home/node/index.mjs"]
 
-ENV FN_PATH "/home/node/app/index"
+ENV FN_PATH "/home/node/app/index.js"
 ENV PORT 8080

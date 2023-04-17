@@ -5,16 +5,16 @@ export default {
   actions: {
     encode: {
       default: true,
-      input: Format.Text,
-      output: Format.Text,
+      input: 'text',
+      output: 'text',
       handler(input, output) {
         output.send('code: ' + input.body);
       },
     },
 
     decode: {
-      input: Format.Text,
-      output: Format.Text,
+      input: 'text',
+      output: 'text',
       handler(input, output) {
         output.send('decode: ' + input.body);
       },
