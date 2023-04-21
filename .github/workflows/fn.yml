@@ -43,7 +43,7 @@ jobs:
           echo 'FROM ghcr.io/node-lambdas/core:latest' > Dockerfile
           echo 'USER root' >> Dockerfile
           echo 'COPY . /home/node/app' >> Dockerfile
-          echo 'RUN cd /home/node/app && npm i && (npm run build || true)' >> Dockerfile
+          echo 'RUN cd /home/node/app && (npm i && npm run build || true)' >> Dockerfile
           echo 'USER node' >> Dockerfile
 
           cat Dockerfile
