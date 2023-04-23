@@ -14,7 +14,8 @@ export interface ColorConsole {
 
 export const Console: ColorConsole = {
   write(type, ...values) {
-    console.log(ansiCodes[type], ...values, ansiCodes.reset);
+    const output = type === 'error' ? console.error : console.log;
+    output(ansiCodes[type], ...values, ansiCodes.reset);
   },
 
   log(...args) {
@@ -28,4 +29,9 @@ export const Console: ColorConsole = {
   error(...args) {
     Console.write('error', ...args);
   },
+  debug(...args: any[]) {
+    if (process.env.DEBUG) {
+      console.error(...args);
+    }
+  }
 };

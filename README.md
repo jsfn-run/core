@@ -39,6 +39,9 @@ They have a few extra properties:
 | buffer      | Buffer       |
 | - not set - | undefined    |
 
+If not set, the request data won't be read from stream.
+Use `request.on('data')` and `request.on('end')` to read the input in the action.
+
 #### response output (via output.send(response))
 
 | output type | response body |
@@ -48,7 +51,7 @@ They have a few extra properties:
 | buffer      | binary output |
 | - not set - | binary output |
 
-In `v1` only one input/output format can be specified for the entire server
+In `v1` only one input/output format can be specified
 In `v2`, each action can specify a different input/input/output format.
 
 #### `request.options`
@@ -131,4 +134,4 @@ First version. Just process input and send back an output.
 
 - Add support for multiple actions and different input/output formats per action.
 - Parses the incoming URL
-- adds `request.options`
+- adds `request.options` and `request.credentials`

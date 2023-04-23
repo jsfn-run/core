@@ -4,5 +4,6 @@ import { Format, Request, Response } from './http.mjs';
 
 export { uid } from './common.mjs';
 export { Console } from './console.mjs';
+export { lambda } from './lambda.mjs';
 export { V1Configuration, V2Configuration, V2Request, Response as V2Response, Request, Response, Format };
 

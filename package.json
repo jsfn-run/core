@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.js",
-  "typings": "typings.d.ts",
+  "typings": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/node-lambdas/core.git"

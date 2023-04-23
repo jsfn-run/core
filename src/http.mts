@@ -4,25 +4,11 @@ import { Console } from './console.mjs';
 
 export type Format = 'json' | 'text' | 'buffer' | 'raw';
 
-/*export interface ActionInput<T extends string | object | Buffer | undefined> {
-  body: T;
-  credentials?: Record<string, string>;
-  pipe<T>(next: T): T;
-}
-
-export interface ActionOutput {
-  reject(error: any): void;
-  header(name: string, value: string): void;
-  send(status: number, body?: string | Promise<any> | object): void;
-  send(body?: string | Promise<any> | object | Error): void;
-  pipeTo(nextCommand: string): void;
-}
-*/
-
 export class Request<T = any> extends IncomingMessage {
   id: string;
   input: Format;
-  body: T;
+  body?: T;
+  credentials?: Record<string, string>;
 }
 
 export class Response<T = any> extends ServerResponse {
@@ -32,7 +18,7 @@ export class Response<T = any> extends ServerResponse {
   header: (name: string, value: string) => void;
   send: (status: number | T, body?: T) => void;
   reject: (message: string) => void;
-  pipeTo: (value: string) => void;
+  pipeTo: (nextCommand: string) => void;
 }
 
 
