@@ -6,6 +6,20 @@ The code behind all node-lambdas
 
 The most basic function is just a single file, called `index.js`.
 
+The file has a default export with a function. For example:
+
+```ts
+// index.js
+export default function sendInputBack(input, output) {
+  input.pipe(output);
+}
+```
+
+## Function Configurations
+
+To allow multiple actions in a single cloud function, and allow for options, the API prefers
+an object as a default export. For example:
+
 ```ts
 import { V2Request, V2Response } from '@node-lambdas/core';
 
