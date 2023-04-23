@@ -8,7 +8,6 @@ export class Request<T = any> extends IncomingMessage {
   id: string;
   input: Format;
   body?: T;
-  credentials?: Record<string, string>;
 }
 
 export class Response<T = any> extends ServerResponse {

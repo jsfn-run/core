@@ -10,6 +10,7 @@ export interface ColorConsole {
   log(...args: any[]): void;
   info(...args: any[]): void;
   error(...args: any[]): void;
+  debug(...args: any[]): void;
 }
 
 export const Console: ColorConsole = {

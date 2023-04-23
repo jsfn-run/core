@@ -10,7 +10,7 @@ export class V2Request extends Request {
   options: any;
   action: Action;
   actionName: string;
-  credentials: object;
+  credentials: Record<string, string>;
 }
 
 export const lambda = (configuration: Configuration) => new V2(configuration);
