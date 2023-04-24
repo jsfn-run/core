@@ -64,7 +64,7 @@ interface RawAction extends BaseAction {
 
 export type Action = JsonAction | BufferAction | TextAction | RawAction;
 
-export class HttpServer {
+export abstract class HttpServer {
   server: any;
 
   constructor() {
@@ -72,9 +72,9 @@ export class HttpServer {
     this.server.listen(process.env.PORT);
   }
 
-  onPrepare(_request: IncomingMessage, _response: ServerResponse) { }
-  onRun(_request: Request, _response: Response) { }
-  describeApi(): () => ApiDescription[];
+  abstract onPrepare(_request: IncomingMessage, _response: ServerResponse): void;
+  abstract onRun(_request: Request, _response: Response): void;
+  abstract describeApi(): ApiDescription[];
 
   async dispatch(request: IncomingMessage, response: ServerResponse) {
     try {

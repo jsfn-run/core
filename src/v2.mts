@@ -1,4 +1,4 @@
-import { HttpServer, Request, Response, Action, ActionHandler, ApiDescription } from './http.mjs';
+import { HttpServer, Request, Response, Action, ApiDescription } from './http.mjs';
 
 export interface Configuration {
   version: 2;
@@ -85,10 +85,11 @@ export class V2 extends HttpServer {
       return;
     }
 
-    this.getHandler(request.action)(request, response);
-  }
+    if (!request.action.handler) {
+      response.reject('Not implemented');
+      return;
+    }
 
-  getHandler(action: Action): ActionHandler<any> {
-    return action.handler || ((_, response) => response.reject('Not implemented'));
+    request.action.handler(request, response);
   }
 }
