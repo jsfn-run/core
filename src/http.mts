@@ -20,6 +20,15 @@ export class Response<T = any> extends ServerResponse {
   pipeTo: (nextCommand: string) => void;
 }
 
+export interface ApiDescription {
+  name: string;
+  description?: string;
+  input: Format;
+  output: Format;
+  credentials: string[];
+  options: Record<string, string>;
+  default?: boolean;
+}
 
 export interface ActionHandler<T extends string | object | Buffer | undefined> {
   (input: Request<T>, output: Response<T>): void;
@@ -65,7 +74,7 @@ export class HttpServer {
 
   onPrepare(_request: IncomingMessage, _response: ServerResponse) { }
   onRun(_request: Request, _response: Response) { }
-  describeApi(): any { }
+  describeApi(): () => ApiDescription[];
 
   async dispatch(request: IncomingMessage, response: ServerResponse) {
     try {
@@ -159,6 +168,7 @@ export class HttpServer {
 
   sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
     const host = request.headers['host'] || '';
+    console.log(request.headers);
 
     response.setHeader(
       'Location',
@@ -222,6 +232,11 @@ export class HttpServer {
   async readRequest(request) {
     return new Promise((resolve) => {
       let chunks = [];
+
+      if (!['json', 'text', 'buffer'].includes(request.input)) {
+        resolve(null);
+        return;
+      }
 
       request.on('data', (chunk: any) => chunks.push(chunk));
       request.on('end', () => {

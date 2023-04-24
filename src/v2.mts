@@ -1,4 +1,4 @@
-import { HttpServer, Request, Response, Action, ActionHandler } from './http.mjs';
+import { HttpServer, Request, Response, Action, ActionHandler, ApiDescription } from './http.mjs';
 
 export interface Configuration {
   version: 2;
@@ -30,25 +30,11 @@ export class V2 extends HttpServer {
     this.setDefaultAction();
   }
 
-  describeApi() {
-    const actions = [];
-
-    Object.entries(this.configuration.actions).forEach(([key, value]) => {
-      let { input = 'raw', output = 'raw', credentials = [], options = {} } = value;
-      const action = {
-        name: key,
-        input: input,
-        output: output,
-        credentials: credentials,
-        options: options,
-        default: value.default,
-        description: value.description || '',
-      };
-
-      actions.push(action);
+  describeApi(): ApiDescription[] {
+    return Object.entries(this.configuration.actions).map(([name, value]) => {
+      let { input = 'raw', output = 'raw', credentials = [], options = {}, description = '' } = value;
+      return { name, input, output, credentials, options, description, default: !!value.default };
     });
-
-    return actions;
   }
 
   setDefaultAction() {
