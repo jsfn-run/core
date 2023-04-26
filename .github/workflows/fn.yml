@@ -7,15 +7,9 @@ name: Create and publish a cloud function
 # jobs:
 #   build:
 #     uses: node-lambdas/core/.github/workflows/fn.yml@main
-#     with:
-#       name: 'function-name'
 
 on:
   workflow_call:
-    inputs:
-      name:
-        type: string
-        required: true
 
 jobs:
   build-and-publish-docker-image:
@@ -40,10 +34,13 @@ jobs:
       - run: docker pull ghcr.io/node-lambdas/core:latest
       - name: Create Dockerfile
         run: |
+          FN_NAME=$(echo '$GITHUB_REPOSITORY' | awk -F/ '{print $2}')
+          echo "FN_NAME=$FN_NAME" >> "$GITHUB_ENV"
           echo 'FROM ghcr.io/node-lambdas/core:latest' > Dockerfile
           echo 'USER root' >> Dockerfile
           echo 'COPY . /home/node/app' >> Dockerfile
           echo 'RUN cd /home/node/app && (npm i && npm run build || true)' >> Dockerfile
+          echo 'ENV FN_NAME $FN_NAME' >> Dockerfile
           echo 'USER node' >> Dockerfile
 
           cat Dockerfile
@@ -55,4 +52,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/node-lambdas/${{ inputs.name }}:latest
+          tags: ghcr.io/node-lambdas/${{ env.FN_NAME }}:latest

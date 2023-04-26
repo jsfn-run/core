@@ -1,5 +1,3 @@
-import { Format } from '../dist/index.js';
-
 export default {
   version: 2,
   actions: {

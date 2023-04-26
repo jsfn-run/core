@@ -81,9 +81,12 @@ export abstract class HttpServer {
       const { method } = request;
 
       switch (true) {
+        case method === Http.Get && request.url === '/index.mjs':
+          this.sendEsModule(request, response);
+          break;
+
         case method === Http.Options && request.url === '/api':
-          this.setCorsHeaders(request, response);
-          response.end(JSON.stringify(this.describeApi(), null, 2));
+          this.sendApiDescription(request, response);
           break;
 
         case method === Http.Options:
@@ -111,6 +114,31 @@ export abstract class HttpServer {
       response.writeHead(500);
       response.end('Internal function error');
     }
+  }
+
+  async sendApiDescription($request: IncomingMessage, $response: ServerResponse) {
+    this.setCorsHeaders($request, $response);
+    const description = this.describeApi();
+    Console.debug(description);
+    $response.end(JSON.stringify(description, null, 2));
+  }
+
+  async sendEsModule(_request: IncomingMessage, $response: ServerResponse) {
+    const description = this.describeApi();
+    const fnName = process.env.FN_NAME;
+    const outputMap = { json: '.json()', text: '.text()' };
+    const lines = description.map(_ =>
+      [(_.default ? 'export default ' : ''),
+      `async function ${_.name}(input, options = {}) {`,
+      `${_.input === 'json' && 'input = JSON.stringify(input)' || ''}`,
+      `const response = await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options), { method: 'POST', body: input });`,
+      `return response${outputMap[_.output] || ''};}`,
+      ].join(''));
+
+    lines.push(`const search = (o) => Object.entries(o).map(([k, v]) => k+'='+v).join('&');`)
+    lines.push('export { ' + description.map(f => f.name).join(', ') + ' }');
+
+    $response.end(lines.join('\n'));
   }
 
   async executeLambda($request: IncomingMessage, $response: ServerResponse) {
