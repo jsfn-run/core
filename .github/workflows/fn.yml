@@ -34,7 +34,7 @@ jobs:
       - run: docker pull ghcr.io/node-lambdas/core:latest
       - name: Create Dockerfile
         run: |
-          FN_NAME=`echo ${{ env.GITHUB_REPOSITORY }} | awk -F/ '{print $2}'`
+          FN_NAME=`echo ${{ github.repository }} | awk -F/ '{print $2}'`
           echo "fn: " $FN_NAME
           env
           echo "FN_NAME=$FN_NAME" >> "$GITHUB_ENV"
