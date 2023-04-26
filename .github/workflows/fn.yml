@@ -35,14 +35,13 @@ jobs:
       - name: Create Dockerfile
         run: |
           FN_NAME=`echo ${{ github.repository }} | awk -F/ '{print $2}'`
-          echo "fn: " $FN_NAME
-          env
+          echo "Preparing for function:" $FN_NAME
           echo "FN_NAME=$FN_NAME" >> "$GITHUB_ENV"
           echo 'FROM ghcr.io/node-lambdas/core:latest' > Dockerfile
           echo 'USER root' >> Dockerfile
           echo 'COPY . /home/node/app' >> Dockerfile
           echo 'RUN cd /home/node/app && (npm i && npm run build || true)' >> Dockerfile
-          echo 'ENV FN_NAME ' $FN_NAME >> Dockerfile
+          echo 'ENV FN_NAME' $FN_NAME >> Dockerfile
           echo 'USER node' >> Dockerfile
 
           cat Dockerfile
