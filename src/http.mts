@@ -191,7 +191,7 @@ export abstract class HttpServer {
     response.end();
   }
 
-  sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
+  sendLambdaDocumentation(_request: IncomingMessage, response: ServerResponse) {
     response.setHeader('Location', 'https://jsfn.run/?fn=' + process.env.FN_NAME);
     response.writeHead(302);
     response.end();
