@@ -81,34 +81,29 @@ export abstract class HttpServer {
       const { method } = request;
 
       switch (true) {
-        case method === Http.Get && request.url === '/index.mjs':
-          this.sendEsModule(request, response);
-          break;
+        case method === Http.Get: {
+          if (request.url === '/index.mjs') {
+            return this.sendEsModule(request, response);
+          }
+
+          return this.sendLambdaDocumentation(request, response);
+        }
 
         case method === Http.Options && request.url === '/api':
-          this.sendApiDescription(request, response);
-          break;
+          return this.sendApiDescription(request, response);
 
         case method === Http.Options:
-          this.sendCorsPreflight(request, response);
-          break;
+          return this.sendCorsPreflight(request, response);
 
         case method === Http.Head && request.url === '/health':
           return this.sendHealthCheckResponse(request, response);
 
-        case method === Http.Get:
-          this.sendLambdaDocumentation(request, response);
-          break;
-
         case method !== Http.Post:
-          this.sendMethodNotAllowed(request, response);
-          break;
+          return this.sendMethodNotAllowed(request, response);
 
         default:
           return this.executeLambda(request, response);
       }
-
-      // this.track(request, response);
     } catch (error) {
       this.logError((request as any).id, error);
       response.writeHead(500);
@@ -318,53 +313,5 @@ export abstract class HttpServer {
     const { url, id } = response.request;
 
     Console.info('[info]', timestamp(), id, String(url), response.statusCode);
-    // this.track(response.request, response);
   }
-
-  /*track(request, response) {
-    if (!process.env.GA_TRACKING_ID) return;
-
-    const { host } = request.headers;
-    const { url, method } = request;
-
-    const serialize = (o = {}) =>
-      Object.entries(o)
-        .filter(([key]) => key !== 'handler' && key !== 'default')
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
-
-    let event;
-    if (request.action) {
-      event = {
-        t: 'event',
-        ec: host,
-        ea: request.actionName,
-        el: response.statusCode,
-        ev: serialize({ ...request.action, ...request.options }),
-      };
-    } else {
-      event = {
-        t: 'pageview',
-        dh: host,
-        dp: String(url),
-        dt: method,
-      };
-    }
-
-    const data = {
-      v: '1',
-      tid: process.env.GA_TRACKING_ID,
-      cid: '2',
-      ...event,
-    };
-
-    try {
-      const body = String(new URLSearchParams(Object.entries(data)));
-      const http = post('http://www.google-analytics.com/collect', { method: 'POST' });
-      http.write(body);
-      http.end();
-    } catch (error) {
-      this.logError(null, error);
-    }
-  }*/
 }
