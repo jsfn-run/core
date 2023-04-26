@@ -192,14 +192,7 @@ export abstract class HttpServer {
   }
 
   sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
-    const host = request.headers['host'] || '';
-    console.log(request.headers);
-
-    response.setHeader(
-      'Location',
-      'https://jsfn.run/?fn=' + (host.endsWith('.jsfn.run') ? host.replace('.jsfn.run', '') : ''),
-    );
-
+    response.setHeader('Location', 'https://jsfn.run/?fn=' + process.env.FN_NAME);
     response.writeHead(302);
     response.end();
   }
