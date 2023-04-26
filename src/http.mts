@@ -82,7 +82,7 @@ export abstract class HttpServer {
 
       switch (true) {
         case method === Http.Get: {
-          if (request.url === '/index.mjs') {
+          if (request.url === '/index.mjs' || request.url === '/index.js') {
             return this.sendEsModule(request, response);
           }
 
