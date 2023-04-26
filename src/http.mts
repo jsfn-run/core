@@ -89,11 +89,13 @@ export abstract class HttpServer {
           return this.sendLambdaDocumentation(request, response);
         }
 
-        case method === Http.Options && request.url === '/api':
-          return this.sendApiDescription(request, response);
+        case method === Http.Options: {
+          if (request.url === '/api') {
+            return this.sendApiDescription(request, response);
+          }
 
-        case method === Http.Options:
           return this.sendCorsPreflight(request, response);
+        }
 
         case method === Http.Head && request.url === '/health':
           return this.sendHealthCheckResponse(request, response);
