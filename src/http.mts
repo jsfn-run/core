@@ -152,8 +152,8 @@ export abstract class HttpServer {
     return this.onRun(request, response);
   }
 
-  onPipe(response: Response, value: string) {
-    response.header('x-next', value);
+  onPipe(response: Response, base64Header: string) {
+    response.header('x-next', base64Header);
     response.end();
 
     this.logRequest(response);
@@ -220,7 +220,10 @@ export abstract class HttpServer {
     response.header = (name: string, value: string) => (response.setHeader(name, value), response);
     response.send = (status: number | any, body?: any) => this.writeResponse(response, status, body);
     response.reject = (message: string) => this.writeResponse(response, 400, String(message || 'Invalid input') + '\n');
-    response.pipeTo = (value: string) => this.onPipe(response, value);
+    response.pipeTo = (name: string, params?: Record<string, any>, action?: string) => {
+      const json = JSON.stringify({ name, params, inputs: action ? [action] : undefined });
+      this.onPipe(response, Buffer.from(json).toString('base64'));
+    };
   }
 
   writeResponse<T>(response: Response, status: number | T, body?: T) {
