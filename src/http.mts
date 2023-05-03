@@ -107,9 +107,7 @@ export abstract class HttpServer {
           return this.executeLambda(request, response);
       }
     } catch (error) {
-      this.logError((request as any).id, error);
-      response.writeHead(500);
-      response.end('Internal function error');
+      this.onError(response, error);
     }
   }
 
@@ -160,8 +158,8 @@ export abstract class HttpServer {
   }
 
   onError(response: Response, error) {
-    this.logError(response.id, error);
-    response.writeHead(500);
+    Console.error('[error]', timestamp(), response.id, error);
+    response.writeHead(500, { 'X-Trace-Id': response.id });
     response.end('');
   }
 
@@ -301,10 +299,6 @@ export abstract class HttpServer {
       default:
         return Buffer.isBuffer(value) ? value : String(value);
     }
-  }
-
-  logError(traceId, error) {
-    Console.error('[error]', timestamp(), traceId, error);
   }
 
   logRequest(response: Response) {

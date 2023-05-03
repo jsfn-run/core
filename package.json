@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc",
     "test": "echo true",
-    "test:server": "PORT=3001 FN_PATH=../test/encode.mjs node --watch ./dist/server.mjs"
+    "test:server": "PORT=3001 FN_PATH=../test/encode.mjs node --watch ./dist/serve.mjs"
   },
   "devDependencies": {
     "@cloud-cli/prettier-config": "^1.0.0",
