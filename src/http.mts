@@ -8,6 +8,9 @@ export class Request<T = any> extends IncomingMessage {
   id: string;
   input: Format;
   body?: T;
+  asBuffer: () => Promise<Buffer>;
+  asText: () => Promise<string>;
+  asJson: () => Promise<any>;
 }
 
 export class Response<T = any> extends ServerResponse {
@@ -18,6 +21,9 @@ export class Response<T = any> extends ServerResponse {
   send: (status: number | T, body?: T) => void;
   reject: (message: string) => void;
   pipeTo: (nextCommand: string) => void;
+  sendBuffer: (b: Buffer) => void;
+  sendText: (b: string) => void;
+  sendJson: (b: any) => void;
 }
 
 export interface ApiDescription {
@@ -122,16 +128,18 @@ export abstract class HttpServer {
     const description = this.describeApi();
     const fnName = process.env.FN_NAME;
     const outputMap = { json: '.json()', text: '.text()' };
-    const lines = description.map(_ =>
-      [(_.default ? 'export default ' : ''),
-      `async function ${_.name}(input, options = {}) {`,
-      `${_.input === 'json' && 'input = JSON.stringify(input)' || ''}`,
-      `const response = await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options), { method: 'POST', body: input });`,
-      `return response${outputMap[_.output] || ''};}`,
-      ].join(''));
+    const lines = description.map((_) =>
+      [
+        _.default ? 'export default ' : '',
+        `async function ${_.name}(input, options = {}) {`,
+        `${(_.input === 'json' && 'input = JSON.stringify(input)') || ''}`,
+        `const response = await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options), { method: 'POST', body: input });`,
+        `return response${outputMap[_.output] || ''};}`,
+      ].join(''),
+    );
 
-    lines.push(`const search = (o) => Object.entries(o).map(([k, v]) => k+'='+v).join('&');`)
-    lines.push('export { ' + description.map(f => f.name).join(', ') + ' }');
+    lines.push(`const search = (o) => Object.entries(o).map(([k, v]) => k+'='+v).join('&');`);
+    lines.push('export { ' + description.map((f) => f.name).join(', ') + ' }');
 
     $response.end(lines.join('\n'));
   }
@@ -157,9 +165,9 @@ export abstract class HttpServer {
     this.logRequest(response);
   }
 
-  onError(response: Response, error) {
-    Console.error('[error]', timestamp(), response.id, error);
-    response.writeHead(500, { 'X-Trace-Id': response.id });
+  onError(response: ServerResponse, error: any) {
+    Console.error('[error]', timestamp(), (response as any).id, error);
+    response.writeHead(500, { 'X-Trace-Id': (response as any).id });
     response.end('');
   }
 
@@ -209,6 +217,10 @@ export abstract class HttpServer {
   }
 
   async augmentRequest(request: Request) {
+    request.asBuffer = () => this.readStream(request);
+    request.asText = async () => (await request.asBuffer()).toString('utf-8');
+    request.asJson = async () => JSON.parse(await request.asText());
+
     if (request.method === Http.Post && !!request.input) {
       await this.readRequest(request);
     }
@@ -221,6 +233,21 @@ export abstract class HttpServer {
     response.pipeTo = (name: string, params?: Record<string, any>, action?: string) => {
       const json = JSON.stringify({ name, params, inputs: action ? [action] : undefined });
       this.onPipe(response, Buffer.from(json).toString('base64'));
+    };
+
+    response.sendBuffer = (b: Buffer) => {
+      response.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+      response.end(b);
+    };
+
+    response.sendText = (b: string) => {
+      response.writeHead(200, { 'Content-Type': 'text/plain' });
+      response.end(b);
+    };
+
+    response.sendJson = (b: any) => {
+      response.writeHead(200, { 'Content-Type': 'application/json' });
+      response.end(JSON.stringify(b));
     };
   }
 
@@ -248,37 +275,42 @@ export abstract class HttpServer {
     this.onSend(response, status as number, body);
   }
 
-  async readRequest(request) {
-    return new Promise((resolve) => {
-      let chunks = [];
+  async readStream(stream: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      stream.on('error', reject);
+      stream.on('close', reject);
+      stream.on('data', (chunk: any) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+  }
 
+  async readRequest(request) {
+    return new Promise(async (resolve) => {
       if (!['json', 'text', 'buffer'].includes(request.input)) {
         resolve(null);
         return;
       }
 
-      request.on('data', (chunk: any) => chunks.push(chunk));
-      request.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        const inputFormat = request.input;
+      const buffer = await this.readStream(request);
+      const inputFormat = request.input;
 
-        switch (inputFormat) {
-          case 'json':
-            request.body = tryToParseJson(buffer.toString('utf8'));
-            break;
+      switch (inputFormat) {
+        case 'json':
+          request.body = tryToParseJson(buffer.toString('utf8'));
+          break;
 
-          case 'text':
-            request.body = buffer.toString('utf8');
-            break;
+        case 'text':
+          request.body = buffer.toString('utf8');
+          break;
 
-          case 'buffer':
-          default:
-            request.body = buffer;
-            break;
-        }
+        case 'buffer':
+        default:
+          request.body = buffer;
+          break;
+      }
 
-        resolve(null);
-      });
+      resolve(null);
     });
   }
 
