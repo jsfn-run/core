@@ -9,7 +9,7 @@ RUN chown -R node:node /home
 
 USER node
 WORKDIR /home/node/app
-ENTRYPOINT ["/usr/local/bin/node", "/home/node/server.mjs"]
+ENTRYPOINT ["/usr/local/bin/node", "/home/node/serve.mjs"]
 
 ENV FN_PATH "/home/node/app/index.js"
 ENV PORT 8080
