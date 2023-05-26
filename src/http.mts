@@ -131,16 +131,17 @@ export abstract class HttpServer {
     const lines = description.map((_) =>
       [
         _.default ? 'export default ' : '',
-        `async function ${_.name}(input, options = {}) {`,
-        `${(_.input === 'json' && 'input = JSON.stringify(input)') || ''}`,
-        `const response = await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options), { method: 'POST', body: input });`,
+        `async function ${_.name}(input,options = {}) {`,
+        `${(_.input === 'json' && 'input=JSON.stringify(input)') || ''}`,
+        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options),{mode:'cors',method:'POST',body:input});`,
         `return response${outputMap[_.output] || ''};}`,
       ].join(''),
     );
 
-    lines.push(`const search = (o) => Object.entries(o).map(([k, v]) => k+'='+v).join('&');`);
+    lines.push(`const search=(o)=>Object.entries(o).map(([k, v]) => k+'='+v).join('&');`);
     lines.push('export { ' + description.map((f) => f.name).join(', ') + ' }');
 
+    $response.setHeader('content-type', 'text/javascript');
     $response.end(lines.join('\n'));
   }
 
