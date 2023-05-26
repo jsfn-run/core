@@ -124,7 +124,7 @@ export abstract class HttpServer {
     $response.end(JSON.stringify(description, null, 2));
   }
 
-  async sendEsModule(_request: IncomingMessage, $response: ServerResponse) {
+  async sendEsModule($request: IncomingMessage, $response: ServerResponse) {
     const description = this.describeApi();
     const fnName = process.env.FN_NAME;
     const outputMap = { json: '.json()', text: '.text()' };
