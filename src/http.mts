@@ -141,6 +141,7 @@ export abstract class HttpServer {
     lines.push(`const search=(o)=>Object.entries(o).map(([k, v]) => k+'='+v).join('&');`);
     lines.push('export { ' + description.map((f) => f.name).join(', ') + ' }');
 
+    this.setCorsHeaders($request, $response);
     $response.setHeader('content-type', 'text/javascript');
     $response.end(lines.join('\n'));
   }
