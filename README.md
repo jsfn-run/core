@@ -138,6 +138,38 @@ const configuration = {
 export default configuration;
 ```
 
+## Functions API
+
+Each handler receives two arguments, `input` and `output`.
+
+They are the same instances of a normal Node.JS HTTP server, with some additional properties:
+
+```ts
+interface Request extends IncomingMessage {
+  id: string;
+  input: 'text' | 'json' | 'buffer';
+  body: string | object | Buffer;
+  asText(): Promise<string>;
+  asJson(): Promise<any>;
+  asBuffer(): Promise<Buffer>;
+}
+
+interface Response extends ServerResponse {
+  id: string;
+  request: Request;
+  output: 'text' | 'json' | 'buffer';
+
+  header(name: string, value: string): void;
+  send(body: any): void;
+  send(status: number, body: any): void;
+  reject(message: string): void;
+  pipeTo(nextCommand: string, args: string[]): void;
+  sendText(b: string): void;
+  sendJson(b: any): void;
+  sendBuffer(b: Buffer): void;
+}
+```
+
 ## Version history
 
 `v1`
