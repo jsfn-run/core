@@ -133,12 +133,12 @@ export abstract class HttpServer {
         _.default ? 'export default ' : '',
         `async function ${_.name}(input,options = {}) {`,
         `${(_.input === 'json' && 'input=JSON.stringify(input||{});') || ''}`,
-        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + search(options),{mode:'cors',method:'POST',body:input});`,
+        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + __s(options),{mode:'cors',method:'POST',body:input});`,
         `return response${outputMap[_.output] || ''};}`,
       ].join(''),
     );
 
-    lines.push(`const search=(o)=>Object.entries(o).map(([k, v]) => k+'='+v).join('&');`);
+    lines.push(`const __s=(o={})=>new URLSearchParams(o).toString();`);
     lines.push('export { ' + description.map((f) => f.name).join(', ') + ' }');
 
     this.setCorsHeaders($request, $response);
