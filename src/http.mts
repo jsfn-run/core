@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse, createServer } from 'http';
 import { uid, toJson, tryToParseJson, timestamp, HttpMethod as Http } from './common.mjs';
 import { Console } from './console.mjs';
 
-export type Format = 'json' | 'text' | 'buffer' | 'raw';
+export type Format = 'json' | 'text' | 'buffer' | 'raw' | 'dom';
 
 export class Request<T = any> extends IncomingMessage {
   id: string;
@@ -127,14 +127,19 @@ export abstract class HttpServer {
   async sendEsModule($request: IncomingMessage, $response: ServerResponse) {
     const description = this.describeApi();
     const fnName = process.env.FN_NAME;
-    const outputMap = { json: '.json()', text: '.text()' };
+    const outputMap = {
+      json: 'response.json()',
+      text: 'response.text()',
+      dom: '(document.body.innerHTML+=await response.text(),"")'
+    };
+
     const lines = description.map((_) =>
       [
         _.default ? 'export default ' : '',
-        `async function ${_.name}(input,options = {}) {`,
-        `${(_.input === 'json' && 'input=JSON.stringify(input||{});') || ''}`,
-        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + __s(options),{mode:'cors',method:'POST',body:input});`,
-        `return response${outputMap[_.output] || ''};}`,
+        `async function ${_.name}(i,o = {}) {`,
+        `${(_.input === 'json' && 'i=JSON.stringify(i||{});') || ''}`,
+        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
+        `return ${outputMap[_.output] || ''};}`,
       ].join(''),
     );
 
