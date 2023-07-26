@@ -140,7 +140,9 @@ export abstract class HttpServer {
 
   async sendEsModule($request: IncomingMessage, $response: ServerResponse) {
     const description = this.describeApi();
-    const fnName = process.env.FN_NAME;
+    const fnName = String(
+      process.env.FN_NAME || $request.headers["x-forwarded-for"] || ""
+    ).replace(".jsfn.run", "");
     const outputMap = {
       json: "response.json()",
       text: "response.text()",
