@@ -5,7 +5,7 @@ import { lambda as v2, Configuration as V2Configuration } from './v2.mjs';
 
 async function main() {
   // @ts-ignore
-  const fn = await import(process.env.FN_MODULE);
+  const fn = await import(process.env.FN_MODULE || process.env.FN_PATH);
   lambda(fn.default);
 }
 
