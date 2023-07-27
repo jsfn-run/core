@@ -6,7 +6,7 @@ ENV HOME=/home/node
 ENV FN_PATH "/home/node/app/index.js"
 COPY ./dist /home/node
 COPY run.sh /entrypoint.sh
-RUN cd /home/node && mkdir app
+RUN cd /home/node && mkdir app && chmod a+w app
 RUN chown -R 1000:1000 /home
 
 USER 1000
