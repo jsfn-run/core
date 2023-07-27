@@ -1,8 +1,12 @@
 #!/bin/sh
 set -e
 
-echo "Running fn from $FN_MODULE $FN_PATH"
+echo "Running fn from $FN_MODULE or $FN_PATH"
 cd /home/node/app
-npm init -y && npm i e$FN_MODULE
+
+if [ -n "$FN_MODULE" ]; then
+  npm i -S fn$FN_MODULE;
+  export FN_PATH="/home/node/app/node_modules/fn/index.js";
+fi
 
 node /home/node/lambda.mjs
