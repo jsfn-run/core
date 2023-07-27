@@ -18,6 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Add read-only token for GH packages registry
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_AUTH_TOKEN }}" >> _npmrc
+          mv _npmrc .npmrc
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
