@@ -1,8 +1,14 @@
-import { HttpServer, Request, Response, Action, ApiDescription } from './http.mjs';
+import {
+  HttpServer,
+  Request,
+  Response,
+  Action,
+  ApiDescription,
+} from "./http.mjs";
 
 export interface Configuration {
   version: 2;
-  actions: Record<string, Action>
+  actions: Record<string, Action>;
 }
 
 export class V2Request extends Request {
@@ -22,7 +28,7 @@ export class V2 extends HttpServer {
     super();
 
     if (!configuration.actions) {
-      throw new Error('No actions were provided in the current configuration');
+      throw new Error("No actions were provided in the current configuration");
     }
 
     const { actions } = this.configuration;
@@ -32,8 +38,22 @@ export class V2 extends HttpServer {
 
   describeApi(): ApiDescription[] {
     return Object.entries(this.configuration.actions).map(([name, value]) => {
-      let { input = 'raw', output = 'raw', credentials = [], options = {}, description = '' } = value;
-      return { name, input, output, credentials, options, description, default: !!value.default };
+      let {
+        input = "raw",
+        output = "raw",
+        credentials = [],
+        options = {},
+        description = "",
+      } = value;
+      return {
+        name,
+        input,
+        output,
+        credentials,
+        options,
+        description,
+        default: !!value.default,
+      };
     });
   }
 
@@ -48,15 +68,18 @@ export class V2 extends HttpServer {
 
   onPrepare($request: Request, response: Response) {
     const request = $request as V2Request;
-    request.parsedUrl = new URL('http://localhost' + request.url);
+    request.parsedUrl = new URL("http://localhost" + request.url);
 
-    const actionName = request.parsedUrl.pathname.slice(1) || 'default';
+    const actionName = request.parsedUrl.pathname.slice(1) || "default";
     const action = this.actions[actionName] || null;
 
     if (!action) return;
 
     const { input, output } = action;
-    request.options = Object.fromEntries(request.parsedUrl.searchParams.entries());
+    const options = Array.from(request.parsedUrl.searchParams.entries()).map(
+      ([key, value]) => [key, decodeURIComponent(value)]
+    );
+    request.options = Object.fromEntries(options);
     request.action = action;
     request.actionName = actionName;
     request.input = input;
@@ -71,22 +94,26 @@ export class V2 extends HttpServer {
     const requiredCredentials = action.credentials || [];
 
     if (requiredCredentials.length && request.headers.authorization) {
-      const token = request.headers.authorization.replace(/\s*Bearer\s*/, '').trim();
-      const json = Buffer.from(token, 'base64').toString('utf-8');
+      const token = request.headers.authorization
+        .replace(/\s*Bearer\s*/, "")
+        .trim();
+      const json = Buffer.from(token, "base64").toString("utf-8");
       const credentials = JSON.parse(json);
 
-      requiredCredentials.forEach((key) => (request.credentials[key] = credentials[key]));
+      requiredCredentials.forEach(
+        (key) => (request.credentials[key] = credentials[key])
+      );
     }
   }
 
   onRun(request: V2Request, response: Response) {
     if (!request.action) {
-      response.reject('Invalid action');
+      response.reject("Invalid action");
       return;
     }
 
     if (!request.action.handler) {
-      response.reject('Not implemented');
+      response.reject("Not implemented");
       return;
     }
 
