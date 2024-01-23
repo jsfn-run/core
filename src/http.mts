@@ -229,11 +229,11 @@ s.innerHTML=n.innerHTML;s.type=n.type;t.push(s);n.remove();
     response.end();
   }
 
-  sendLambdaDocumentation(_request: IncomingMessage, response: ServerResponse) {
-    response.setHeader(
-      "Location",
-      "https://jsfn.run/?fn=" + process.env.FN_NAME
-    );
+  sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
+    const host = String(request.headers['x-forwarded-for'] || '');
+    const name = host.replace('.jsfn.run', '')
+
+    response.setHeader("Location", "https://jsfn.run/?fn=" + name);
     response.writeHead(302);
     response.end();
   }
