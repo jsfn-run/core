@@ -140,9 +140,7 @@ export abstract class HttpServer {
 
   async sendEsModule($request: IncomingMessage, $response: ServerResponse) {
     const description = this.describeApi();
-    const fnName = String(
-      process.env.FN_NAME || $request.headers["x-forwarded-for"] || ""
-    ).replace(".jsfn.run", "");
+    const fnName = String($request.headers["x-forwarded-for"] || "").replace(".jsfn.run", "");
     const outputMap = {
       json: "response.json()",
       text: "response.text()",
@@ -155,7 +153,7 @@ export abstract class HttpServer {
         `async function ${_.name}(i,o = {}) {`,
         `${(_.input === "json" && "i=JSON.stringify(i||{});") || ""}`,
         `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
-        `return ${outputMap[_.output] || ""};}`,
+        `return ${outputMap[_.output] || "response"};}`,
       ].join("")
     );
 
