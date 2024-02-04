@@ -3,7 +3,7 @@ import { lambda as v2, Configuration as V2Configuration } from './v2.mjs';
 
 export function lambda(configuration: any) {
   if (typeof configuration === 'function') {
-    return v1({ version: 1, handler: configuration })
+    return v1({ version: 1, handler: configuration });
   }
 
   switch (configuration.version || 1) {
@@ -17,4 +17,3 @@ export function lambda(configuration: any) {
       throw new Error('Invalid configuration');
   }
 }
-

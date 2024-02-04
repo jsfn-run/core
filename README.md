@@ -2,16 +2,46 @@
 
 The code behind all node-lambdas
 
-## Example
+## Introduction
 
-The most basic function is just a single file, called `index.js`.
+Lambdas are functions that receive an input and generate an output over HTTP requests.
 
-The file has a default export with a function. For example:
+Each function has its own web address and works like a regular server.
+Behind that address is a tiny app that transforms an input into something else.
+
+## Examples
+
+The simplest function just prints its input back to the output:
 
 ```ts
-// index.js
+// index.mjs
 export default function sendInputBack(input, output) {
   input.pipe(output);
+}
+```
+
+A more useful example: create a hash from the input text
+
+```ts
+import { createHash } from 'node:crypto';
+
+export default {
+  version: 2,
+  description: 'Create a hash from the input. Set the "type" option to any Node.js hash algorithm, like sha256',
+  actions: {
+    createHash: {
+      default: true,
+      options: {
+        type: 'algorithm',
+      },
+      handler(input, output) {
+        const type = input.options.type || 'sha256';
+        const hash = createHash(type);
+        input.on('data', c => hash.update(c));
+        input.on('end', () => output.sendText(hash.digest('hex')));
+      }
+    }
+  }
 }
 ```
 
@@ -88,21 +118,19 @@ This is set to an instance of [URL](https://nodejs.org/api/url.html#url_the_what
 Accepts a configuration object and a simple handler function.
 
 ```javascript
-function main(input, output) {
+function textToJson(input, output) {
   const textInput = input.body;
   const jsonOutput = { text: textInput };
 
-  output.send(jsonOutput);
+  output.sendJson(jsonOutput);
 }
 
-const configuration = {
+export default {
   version: 1,
   input: 'text',
   output: 'json',
   handler: main,
 };
-
-export default configuration;
 ```
 
 ### v2
@@ -113,12 +141,19 @@ One of the actions can be marked as default.
 ```javascript
 import { lambda, Format } from '@node-lambdas/core';
 
-// some format that can be transformed into JSON and back into text
-function encode(text) {}
-function decode(json) {}
+// encode text as JSON
+function encode(text) {
+  return { text };
+}
+
+// decode JSON back to text
+function decode(json) {
+  return json.text;
+}
 
 const configuration = {
   version: 2,
+  description: '',
   actions: {
     encode: {
       default: true,
@@ -140,7 +175,7 @@ export default configuration;
 
 ## Functions API
 
-Each handler receives two arguments, `input` and `output`.
+A function handler receives two arguments, `input` and `output`.
 
 They are the same instances of a normal Node.JS HTTP server, with some additional properties:
 
@@ -149,6 +184,8 @@ interface Request extends IncomingMessage {
   id: string;
   input: 'text' | 'json' | 'buffer';
   body: string | object | Buffer;
+  credentials: Record<string, string>;
+  options: Record<string, string>;
   asText(): Promise<string>;
   asJson(): Promise<any>;
   asBuffer(): Promise<Buffer>;

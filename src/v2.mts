@@ -1,13 +1,15 @@
-import { HttpServer, Request, Response, Action, ApiDescription } from './http.mjs';
+import { HttpServer } from './http.mjs';
+import { Request, Response, Action, ApiDescription } from './types.mjs';
 
 const isNumberRe = /^[0-9]+$/;
 
 export interface Configuration {
+  description?: string;
   version: 2;
   actions: Record<string, Action>;
 }
 
-export class V2Request extends Request {
+export interface V2Request extends Request {
   parsedUrl: URL;
   options: any;
   action: Action;
@@ -32,19 +34,22 @@ export class V2 extends HttpServer {
     this.setDefaultAction();
   }
 
-  describeApi(): ApiDescription[] {
-    return Object.entries(this.configuration.actions).map(([name, value]) => {
-      let { input = 'raw', output = 'raw', credentials = [], options = {}, description = '' } = value;
-      return {
-        name,
-        input,
-        output,
-        credentials,
-        options,
-        description,
-        default: !!value.default,
-      };
-    });
+  describeApi(): ApiDescription {
+    return {
+      description: this.configuration.description,
+      actions: Object.entries(this.configuration.actions).map(([name, value]) => {
+        let { input = 'raw', output = 'raw', credentials = [], options = {}, description = '' } = value;
+        return {
+          name,
+          input,
+          output,
+          credentials,
+          options,
+          description,
+          default: !!value.default,
+        };
+      }),
+    };
   }
 
   setDefaultAction() {

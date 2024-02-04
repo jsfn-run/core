@@ -1,4 +1,5 @@
-import { Format, ActionHandler, ApiDescription, HttpServer, Request, Response } from './http.mjs';
+import { Format, ActionHandler, ApiDescription, Request, Response } from './types.mjs';
+import { HttpServer } from './http.mjs';
 
 export interface Configuration {
   version: 1;
@@ -25,16 +26,21 @@ export class V1 extends HttpServer {
     return this.configuration.handler(request, response);
   }
 
-  describeApi(): ApiDescription[] {
+  describeApi(): ApiDescription {
     const { input, output } = this.configuration;
 
-    return [{
-      name: 'default',
-      default: true,
-      input: input || 'raw',
-      output: output || 'raw',
-      credentials: [],
-      options: {}
-    }];
+    return {
+      description: '',
+      actions: [
+        {
+          name: 'default',
+          default: true,
+          input: input || 'raw',
+          output: output || 'raw',
+          credentials: [],
+          options: {},
+        },
+      ],
+    };
   }
 }
