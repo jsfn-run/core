@@ -102,7 +102,17 @@ s.innerHTML=n.innerHTML;s.type=n.type;t.push(s);n.remove();
       return null;
     }
 
-    return this.onRun(request, response);
+    try {
+      return this.onRun(request, response);
+    } catch (error) {
+      if (!response.headersSent) {
+        return response.reject(String(error));
+      }
+
+      if (!response.closed)
+        return response.end();
+      }
+    }
   }
 
   onPipe(response: Response, base64Header: string) {
