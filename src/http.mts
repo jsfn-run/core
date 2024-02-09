@@ -109,7 +109,7 @@ s.innerHTML=n.innerHTML;s.type=n.type;t.push(s);n.remove();
         return response.reject(String(error));
       }
 
-      if (!response.closed)
+      if (!response.closed) {
         return response.end();
       }
     }
