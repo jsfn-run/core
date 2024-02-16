@@ -2,6 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { Console } from './console.mjs';
 import { ApiDescription, Format, Request, Response } from './types.mjs';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 export abstract class HttpServer {
   server: any;
@@ -154,9 +156,16 @@ s.innerHTML=n.innerHTML;s.type=n.type;t.push(s);n.remove();
     response.end();
   }
 
-  sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
+  async sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
     const host = String(request.headers['x-forwarded-for'] || '');
     const name = host.replace('.jsfn.run', '');
+
+    const indexFile = process.cwd() + '/index.html';
+    if (existsSync(indexFile)) {
+      const file = await readFile(indexFile, 'utf-8');
+      response.end(file);
+      return;
+    }
 
     response.setHeader('Location', 'https://jsfn.run/?fn=' + name);
     response.writeHead(302);
