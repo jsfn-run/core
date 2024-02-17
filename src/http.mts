@@ -85,7 +85,7 @@ export abstract class HttpServer {
 t=d.createElement('template');t.innerHTML=h;z=t.content.cloneNode(true);t=[];
 z.querySelectorAll('script,style').forEach(n=>{
 s=d.createElement(n.nodeName.toLowerCase());
-['innerHTML','type','src'].map(k=>s[k]=n[k]);t.push(s);n.remove();
+['innerHTML','type','src'].map(k=>(n[k]&&s[k]=n[k]));t.push(s);n.remove();
 });return [...z.childNodes,...t].map(n=>d.body.append(n)),''}`);
     }
 
