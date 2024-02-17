@@ -72,20 +72,23 @@ export abstract class HttpServer {
         _.default ? 'export default ' : '',
         `async function ${_.name}(i,o = {}) {`,
         `${(_.input === 'json' && 'i=JSON.stringify(i||{});') || ''}`,
-        `const response=await fetch('https://${fnName}.jsfn.run/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
+        `const response=await fetch(__url+'/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
         `return ${outputMap[_.output] || 'response'};}`,
       ].join(''),
     );
 
+    lines.push(`const __url='https://${fnName}.jsfn.run';`)
     lines.push(`const __s=(o={})=>new URLSearchParams(o).toString();`);
+
     if (description.actions.find((a) => a.output === 'dom')) {
       lines.push(`const __d=(h,t,s,z,d=document)=>{
 t=d.createElement('template');t.innerHTML=h;z=t.content.cloneNode(true);t=[];
 z.querySelectorAll('script,style').forEach(n=>{
 s=d.createElement(n.nodeName.toLowerCase());
-s.innerHTML=n.innerHTML;s.type=n.type;t.push(s);n.remove();
+['innerHTML','type','src'].map(k=>s[k]=n[k]);t.push(s);n.remove();
 });return [...z.childNodes,...t].map(n=>d.body.append(n)),''}`);
     }
+
     lines.push('export { ' + description.actions.map((f) => f.name).join(', ') + ' }');
 
     this.setCorsHeaders($request, $response);
