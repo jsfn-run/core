@@ -14,16 +14,16 @@ import {
 } from './utils.mjs';
 
 export class HttpServer {
-  protected server: ReturnType<typeof createServer>;
+  server: ReturnType<typeof createServer>;
   readonly actions: Record<string, Action>;
 
   constructor(protected configuration: Configuration) {
-    this.server = createServer((request, response) => this.dispatch(request, response));
-    this.server.listen(process.env.PORT);
-
     if (!configuration.actions) {
       throw new Error('No actions were provided in the current configuration');
     }
+
+    this.server = createServer((request, response) => this.dispatch(request, response));
+    this.server.listen(process.env.PORT);
 
     const { actions } = this.configuration;
     this.actions = { ...actions };
