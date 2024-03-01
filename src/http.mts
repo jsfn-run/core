@@ -31,7 +31,14 @@ export class HttpServer {
   }
 
   setDefaultAction() {
-    Object.keys(this.actions).some((actionName) => {
+    const keys = Object.keys(this.actions);
+
+    if (keys.length === 1) {
+      this.actions.default = this.actions[keys[0]];
+      return;
+    }
+
+    keys.some((actionName) => {
       if (this.actions[actionName].default) {
         this.actions.default = this.actions[actionName];
         return true;
