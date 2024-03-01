@@ -1,189 +1,56 @@
-import { randomBytes } from 'node:crypto';
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { Console } from './console.mjs';
-import { ApiDescription, Format, Request, Response } from './types.mjs';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import type { Action, Configuration, Format, Request, Response } from './types.mjs';
+import {
+  describeApi,
+  generateEsModule,
+  parseOption,
+  readCredentials,
+  setCorsHeaders,
+  timestamp,
+  tryToParseJson,
+} from './utils.mjs';
 
-export abstract class HttpServer {
-  server: any;
+export class HttpServer {
+  protected server: ReturnType<typeof createServer>;
+  readonly actions: Record<string, Action>;
 
-  constructor() {
+  constructor(protected configuration: Configuration) {
     this.server = createServer((request, response) => this.dispatch(request, response));
     this.server.listen(process.env.PORT);
+
+    if (!configuration.actions) {
+      throw new Error('No actions were provided in the current configuration');
+    }
+
+    const { actions } = this.configuration;
+    this.actions = { ...actions };
+    this.setDefaultAction();
   }
 
-  abstract onPrepare(_request: IncomingMessage, _response: ServerResponse): void;
-  abstract onRun(_request: Request, _response: Response): void;
-  abstract describeApi(): ApiDescription;
-
-  async dispatch(request: IncomingMessage, response: ServerResponse) {
-    try {
-      const { method } = request;
-
-      switch (true) {
-        case method === 'GET': {
-          if (request.url === '/index.mjs' || request.url === '/index.js') {
-            return this.sendEsModule(request, response);
-          }
-
-          return this.sendLambdaDocumentation(request, response);
-        }
-
-        case method === 'OPTIONS': {
-          if (request.url === '/api') {
-            return this.sendApiDescription(request, response);
-          }
-
-          return this.sendCorsPreflight(request, response);
-        }
-
-        case method === 'HEAD' && request.url === '/health':
-          return this.sendHealthCheckResponse(request, response);
-
-        case method !== 'POST':
-          return this.sendMethodNotAllowed(request, response);
-
-        default:
-          return this.executeLambda(request, response);
+  setDefaultAction() {
+    Object.keys(this.actions).some((actionName) => {
+      if (this.actions[actionName].default) {
+        this.actions.default = this.actions[actionName];
+        return true;
       }
-    } catch (error) {
-      this.onError(response, error);
-    }
+    });
   }
 
-  async sendApiDescription($request: IncomingMessage, $response: ServerResponse) {
-    this.setCorsHeaders($request, $response);
-    const description = this.describeApi();
-    $response.end(JSON.stringify(description, null, 2));
-  }
+  async prepareAction($request: IncomingMessage, $response: ServerResponse) {
+    setCorsHeaders($response);
 
-  async sendEsModule($request: IncomingMessage, $response: ServerResponse) {
-    const description = this.describeApi();
-    const fnName = String($request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
-    const outputMap = {
-      json: 'response.json()',
-      text: 'response.text()',
-      dom: '__d(await response.text())',
-    };
-
-    const lines = description.actions.map((_) =>
-      [
-        _.default ? 'export default ' : '',
-        `async function ${_.name}(i,o = {}) {`,
-        `${(_.input === 'json' && 'i=JSON.stringify(i||{});') || ''}`,
-        `const response=await fetch(__url+'/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
-        `return ${outputMap[_.output] || 'response'};}`,
-      ].join(''),
-    );
-
-    lines.push(`const __url='https://${fnName}.jsfn.run';`)
-    lines.push(`const __s=(o={})=>new URLSearchParams(o).toString();`);
-
-    if (description.actions.find((a) => a.output === 'dom')) {
-      lines.push(`const __d=(h,t,s,z,d=document)=>{
-t=d.createElement('template');t.innerHTML=h;z=t.content.cloneNode(true);t=[];
-z.querySelectorAll('script,style').forEach(n=>{
-s=d.createElement(n.nodeName.toLowerCase());
-['innerHTML','type','src'].map(k=>{if (n[k]) s[k]=n[k];});t.push(s);n.remove();
-});return [...z.childNodes,...t].map(n=>d.body.append(n)),''}`);
-    }
-
-    lines.push('export { ' + description.actions.map((f) => f.name).join(', ') + ' }');
-
-    this.setCorsHeaders($request, $response);
-    $response.setHeader('content-type', 'text/javascript');
-    $response.end(lines.join('\n'));
-  }
-
-  async executeLambda($request: IncomingMessage, $response: ServerResponse) {
-    this.setCorsHeaders($request, $response);
-    this.onPrepare($request, $response);
-
-    const { request, response } = await this.prepareInputAndOutput($request, $response);
-
-    if (request.body === null && request.input === 'json') {
-      response.reject('Invalid JSON');
-      return null;
-    }
-
-    try {
-      return this.onRun(request, response);
-    } catch (error) {
-      if (!response.headersSent) {
-        return response.reject(String(error));
-      }
-
-      if (!response.closed) {
-        return response.end();
-      }
-    }
-  }
-
-  onPipe(response: Response, base64Header: string) {
-    response.header('x-next', base64Header);
-    response.end();
-
-    this.logRequest(response);
-  }
-
-  onError(response: ServerResponse, error: any) {
-    Console.error('[error]', timestamp(), (response as any).id, error);
-    response.writeHead(500, { 'X-Trace-Id': (response as any).id });
-    response.end('');
-  }
-
-  onSend(response: Response, status: number, value: any) {
-    const body = this.serialize(value, response.output);
-
-    response.writeHead(status);
-    response.end(body);
-
-    this.logRequest(response);
-  }
-
-  sendMethodNotAllowed(_request: IncomingMessage, response: ServerResponse) {
-    response.setHeader('Connection', 'close');
-    response.writeHead(405);
-    response.end('');
-  }
-
-  sendCorsPreflight(request: IncomingMessage, response: ServerResponse) {
-    this.setCorsHeaders(request, response);
-    response.end();
-  }
-
-  sendHealthCheckResponse(_request: IncomingMessage, response: ServerResponse) {
-    response.setHeader('Connection', 'close');
-    response.writeHead(200);
-    response.end();
-  }
-
-  async sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
-    const host = String(request.headers['x-forwarded-for'] || '');
-    const name = host.replace('.jsfn.run', '');
-
-    const indexFile = process.cwd() + '/index.html';
-    if (existsSync(indexFile)) {
-      const file = await readFile(indexFile, 'utf-8');
-      response.end(file);
-      return;
-    }
-
-    response.setHeader('Location', 'https://jsfn.run/?fn=' + name);
-    response.writeHead(302);
-    response.end();
-  }
-
-  async prepareInputAndOutput($request: IncomingMessage, $response: ServerResponse) {
     const request = $request as Request;
     const response = $response as Response;
+    const action = this.readAction(request, response);
 
-    request.id = response.id = uid();
-    response.request = request;
-
-    await this.augmentRequest(request);
-    await this.augmentResponse(response);
+    if (action) {
+      await this.augmentRequest(request);
+      await this.augmentResponse(response);
+      readCredentials(request);
+    }
 
     return { request, response };
   }
@@ -227,9 +94,165 @@ s=d.createElement(n.nodeName.toLowerCase());
     };
   }
 
-  writeResponse<T>(response: Response, status: number | T, body?: T) {
-    response.header('X-Trace-Id', response.id);
+  readAction(request: Request, response: Response) {
+    const parsedUrl = new URL(request.url, 'http://localhost');
+    const actionName = parsedUrl.pathname.slice(1) || 'default';
+    const action = this.actions[actionName] || null;
 
+    if (!action) return;
+
+    const { input, output } = action;
+    const options = Array.from(parsedUrl.searchParams.entries()).map(([key, value]) => [key, parseOption(value)]);
+
+    Object.assign(request, {
+      options: Object.fromEntries(options),
+      action,
+      actionName,
+      input,
+      credentials: {},
+    });
+
+    response.output = output;
+
+    return action;
+  }
+
+  async dispatch(request: IncomingMessage, response: ServerResponse) {
+    try {
+      const { method } = request;
+
+      switch (true) {
+        case method === 'GET': {
+          if (request.url === '/index.mjs' || request.url === '/index.js') {
+            return this.sendEsModule(request, response);
+          }
+
+          return this.sendLambdaDocumentation(request, response);
+        }
+
+        case method === 'OPTIONS': {
+          if (request.url === '/api') {
+            return this.sendApiDescription(response);
+          }
+
+          setCorsHeaders(response);
+          response.end();
+          return;
+        }
+
+        case method === 'HEAD' && request.url === '/health':
+          return this.sendHealthCheckResponse(request, response);
+
+        case method !== 'POST':
+          return this.sendMethodNotAllowed(request, response);
+
+        default:
+          return this.executeLambda(request, response);
+      }
+    } catch (error) {
+      this.onError(response, error);
+    }
+  }
+
+  async sendApiDescription(response: ServerResponse) {
+    setCorsHeaders(response);
+    const description = describeApi(this.configuration);
+    response.end(JSON.stringify(description, null, 2));
+  }
+
+  async sendEsModule(request: IncomingMessage, response: ServerResponse) {
+    const fnName = String(request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
+    const code = generateEsModule(this.configuration, fnName);
+    setCorsHeaders(response);
+    response.setHeader('content-type', 'text/javascript');
+    response.end(code);
+  }
+
+  async executeLambda($request: IncomingMessage, $response: ServerResponse) {
+    const { request, response } = await this.prepareAction($request, $response);
+
+    if (request.body === null && request.input === 'json') {
+      response.reject('Invalid JSON');
+      return null;
+    }
+
+    try {
+      if (!request.action) {
+        response.reject('Invalid action');
+        return;
+      }
+
+      if (!request.action.handler) {
+        response.reject('Not implemented');
+        return;
+      }
+
+      request.action.handler(request, response);
+    } catch (error) {
+      if (!response.headersSent) {
+        return response.reject(String(error));
+      }
+
+      if (!response.closed) {
+        return response.end();
+      }
+    }
+  }
+
+  onPipe(response: Response, base64Header: string) {
+    response.header('x-next', base64Header);
+    response.end();
+
+    this.logRequest(response);
+  }
+
+  onError(response: ServerResponse, error: any) {
+    Console.error('[error]', timestamp(), error);
+    response.writeHead(500, 'Function error');
+    response.end('');
+  }
+
+  onSend(response: Response, status: number, value: any) {
+    const body = this.serialize(value, response.output);
+
+    response.writeHead(status);
+    response.end(body);
+
+    this.logRequest(response);
+  }
+
+  sendMethodNotAllowed(_request: IncomingMessage, response: ServerResponse) {
+    response.setHeader('Connection', 'close');
+    response.writeHead(405);
+    response.end('');
+  }
+
+  sendCorsPreflight(response: ServerResponse) {
+    setCorsHeaders(response);
+    response.end();
+  }
+
+  sendHealthCheckResponse(_request: IncomingMessage, response: ServerResponse) {
+    response.setHeader('Connection', 'close');
+    response.writeHead(200);
+    response.end();
+  }
+
+  async sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
+    const functionName = String(request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
+    const indexFile = process.cwd() + '/index.html';
+    if (existsSync(indexFile)) {
+      const file = await readFile(indexFile, 'utf-8');
+      response.end(file);
+      return;
+    }
+
+    response.setHeader('Location', 'https://jsfn.run/?fn=' + functionName);
+    response.writeHead(302);
+    response.end();
+  }
+
+  writeResponse<T>(response: Response, status: number | T, body?: T) {
     if (typeof body === 'undefined' && typeof status !== 'number') {
       body = status as T;
       status = 200;
@@ -290,15 +313,10 @@ s=d.createElement(n.nodeName.toLowerCase());
     });
   }
 
-  setCorsHeaders(_request: IncomingMessage, response: ServerResponse) {
-    response.setHeader('Access-Control-Allow-Origin', '*');
-    response.setHeader('Access-Control-Allow-Headers', 'content-type, authorization');
-  }
-
   serialize(value: any, format: Format) {
     switch (format) {
       case 'json':
-        return toJson(value);
+        return JSON.stringify(value);
 
       case 'text':
         return value && value.toString ? value.toString('utf8') : String(value);
@@ -310,20 +328,8 @@ s=d.createElement(n.nodeName.toLowerCase());
   }
 
   logRequest(response: Response) {
-    const { url, id } = response.request;
+    const { url } = response.request;
 
-    Console.info('[info]', timestamp(), id, String(url), response.statusCode);
+    Console.info('[info]', timestamp(), String(url), response.statusCode);
   }
 }
-
-const uid = (size = 16) => randomBytes(size).toString('hex');
-const toJson = (x: any, inOneLine = false) => JSON.stringify(x, null, inOneLine ? 0 : 2);
-const timestamp = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-const tryToParseJson = (data: string) => {
-  try {
-    return JSON.parse(data);
-  } catch {
-    return null;
-  }
-};

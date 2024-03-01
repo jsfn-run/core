@@ -1,16 +1,21 @@
-import { Configuration as V1Configuration } from './v1.mjs';
-import { Configuration as V2Configuration, V2Request } from './v2.mjs';
-import type { Format, Request, Response, ApiDescription } from './types.mjs';
+import type { Format, Request, Response, ApiDescription, Configuration } from './types.mjs';
+import { HttpServer } from './http.mjs';
 
 export { Console } from './console.mjs';
-export { lambda } from './lambda.mjs';
-export {
-  V1Configuration,
-  V2Configuration,
-  V2Request,
-  Response as V2Response,
-  Request,
-  Response,
-  Format,
-  ApiDescription,
-};
+export type { Configuration, Request, Response, Format, ApiDescription };
+
+export function lambda(configuration: Configuration | (<T>(input: Request, output: Response) => Promise<T>)) {
+  if (typeof configuration === 'function') {
+    return new HttpServer({
+      actions: {
+        action: {
+          input: 'raw',
+          default: true,
+          handler: configuration,
+        },
+      },
+    });
+  }
+
+  return new HttpServer(configuration);
+}

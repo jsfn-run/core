@@ -1,6 +1,1 @@
-export default {
-  version: 1,
-  input: 'text',
-  output: 'text',
-  handler: (request, response) => response.send(request.body),
-};
+export default (request, response) => request.pipe(response);

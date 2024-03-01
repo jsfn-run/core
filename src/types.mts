@@ -2,8 +2,17 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export type Format = 'json' | 'text' | 'buffer' | 'raw' | 'dom';
 
+export interface Configuration {
+  description?: string;
+  actions: Record<string, Action>;
+}
+
 export interface Request<T = any> extends IncomingMessage {
-  id: string;
+  parsedUrl: URL;
+  options: any;
+  action: Action;
+  actionName: string;
+  credentials: Record<string, string>;
   input: Format;
   body?: T;
   asBuffer: () => Promise<Buffer>;
@@ -12,7 +21,6 @@ export interface Request<T = any> extends IncomingMessage {
 }
 
 export interface Response<T = any> extends ServerResponse {
-  id: string;
   request: Request;
   output: Format;
   header: (name: string, value: string) => void;

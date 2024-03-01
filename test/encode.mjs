@@ -1,5 +1,4 @@
 export default {
-  version: 2,
   actions: {
     encode: {
       default: true,
