@@ -46,9 +46,10 @@ export class HttpServer {
     const response = $response as Response;
     const action = this.readAction(request, response);
 
+    await this.augmentRequest(request);
+    await this.augmentResponse(response);
+
     if (action) {
-      await this.augmentRequest(request);
-      await this.augmentResponse(response);
       readCredentials(request);
     }
 
