@@ -51,6 +51,7 @@ export class HttpServer {
 
     const request = $request as Request;
     const response = $response as Response;
+    response.request = request;
     const action = this.readAction(request, response);
 
     await this.augmentRequest(request);
