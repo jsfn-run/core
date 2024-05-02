@@ -10,7 +10,6 @@ import {
   readCredentials,
   setCorsHeaders,
   timestamp,
-  tryToParseJson,
 } from './utils.mjs';
 
 export class HttpServer {
@@ -68,10 +67,6 @@ export class HttpServer {
     request.asBuffer = () => this.readStream(request);
     request.asText = async () => (await request.asBuffer()).toString('utf-8');
     request.asJson = async () => JSON.parse(await request.asText());
-
-    if (request.method === 'POST' && !!request.input) {
-      await this.readRequest(request);
-    }
   }
 
   async augmentResponse(response: Response) {
@@ -180,11 +175,6 @@ export class HttpServer {
   async executeLambda($request: IncomingMessage, $response: ServerResponse) {
     const { request, response } = await this.prepareAction($request, $response);
 
-    if (request.body === null && request.input === 'json') {
-      response.reject('Invalid JSON');
-      return null;
-    }
-
     try {
       if (!request.action) {
         response.reject('Invalid action');
@@ -196,7 +186,7 @@ export class HttpServer {
         return;
       }
 
-      request.action.handler(request, response);
+      await request.action.handler(request, response);
     } catch (error) {
       if (!response.headersSent) {
         return response.reject(String(error));
@@ -290,35 +280,6 @@ export class HttpServer {
       stream.on('close', reject);
       stream.on('data', (chunk: any) => chunks.push(chunk));
       stream.on('end', () => resolve(Buffer.concat(chunks)));
-    });
-  }
-
-  async readRequest(request) {
-    return new Promise(async (resolve) => {
-      if (!['json', 'text', 'buffer'].includes(request.input)) {
-        resolve(null);
-        return;
-      }
-
-      const buffer = await this.readStream(request);
-      const inputFormat = request.input;
-
-      switch (inputFormat) {
-        case 'json':
-          request.body = tryToParseJson(buffer.toString('utf8'));
-          break;
-
-        case 'text':
-          request.body = buffer.toString('utf8');
-          break;
-
-        case 'buffer':
-        default:
-          request.body = buffer;
-          break;
-      }
-
-      resolve(null);
     });
   }
 
