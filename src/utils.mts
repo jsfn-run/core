@@ -67,11 +67,15 @@ export function parseOption(value) {
   return value;
 }
 
+function readRequestToken(token: string) {
+  return token.replace('Bearer', '').replace('bearer', '').trim();
+}
+
 export function readCredentials(request: Request) {
   const requiredCredentials = request.action.credentials || [];
 
   if (requiredCredentials.length && request.headers.authorization) {
-    const token = request.headers.authorization.replace(/\s*Bearer\s*/, '').trim();
+    const token = readRequestToken(request.headers.authorization);
     const json = Buffer.from(token, 'base64').toString('utf-8');
     const credentials = JSON.parse(json);
 
