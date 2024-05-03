@@ -85,7 +85,8 @@ export function readCredentials(request: Request) {
 
 export function setCorsHeaders(response: ServerResponse) {
   response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Headers', 'content-type, authorization');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-next');
 }
 
 export const timestamp = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
