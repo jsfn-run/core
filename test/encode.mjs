@@ -1,3 +1,5 @@
+/* @type {import('@node-lambdas/core').Configuration} */
+
 export default {
   actions: {
     encode: {

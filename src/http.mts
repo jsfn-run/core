@@ -105,14 +105,13 @@ export class HttpServer {
 
     if (!action) return;
 
-    const { input, output } = action;
+    const { output } = action;
     const options = Array.from(parsedUrl.searchParams.entries()).map(([key, value]) => [key, parseOption(value)]);
 
     Object.assign(request, {
       options: Object.fromEntries(options),
       action,
       actionName,
-      input,
       credentials: {},
     });
 

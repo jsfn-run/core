@@ -1,13 +1,45 @@
 # @node-lambdas/core
 
-The code behind all node-lambdas
+The main code behind all "function-as-a-service" utilities at [jsfn.run](https://jsfn.run).
 
 ## Introduction
 
-Lambdas are functions that receive an input and generate an output over HTTP requests.
+Node Lambdas are tiny HTTP servers that receive an input request and generate an output. Each function has its own web address and works like a regular server.
 
-Each function has its own web address and works like a regular server.
-Behind that address is a tiny app that transforms an input into something else.
+The main motivation is to make it dead-easy to spin up new services that expose any NPM module or API under the hood.
+
+Do you need to convert an image? Parse a YAML? Validate a JSON?
+Instead of installing something, just post it to a Node Lambda!
+
+## Functions API
+
+A node-lambda is a single `.mjs` file that exports a configuration object.
+
+A function handler receives two arguments, `input` and `output`.
+
+They are the same instances of a normal Node.JS HTTP server, with some additional properties:
+
+```ts
+interface Request extends IncomingMessage {
+  credentials: Record<string, string>;
+  options: Record<string, string>;
+  asText(): Promise<string>;
+  asJson(): Promise<any>;
+  asBuffer(): Promise<Buffer>;
+}
+
+interface Response extends ServerResponse {
+  request: Request;
+  header(name: string, value: string): void;
+  reject(message: string): void;
+  sendText(b: string): void;
+  sendJson(b: any): void;
+  sendBuffer(b: Buffer): void;
+  pipeTo(nextCommand: string, args: string[]): void;
+  send(body: any): void;
+  send(status: number, body: any): void;
+}
+```
 
 ## Examples
 
@@ -50,16 +82,16 @@ export default {
 To allow multiple actions in a single cloud function, and allow for options, the API prefers
 an object as a default export. For example:
 
-```ts
-import { V2Request, V2Response } from '@node-lambdas/core';
+```js
+// index.mjs
 
-// index.js
 export default {
-  version: 2,
   actions: {
     echo: {
       default: true,
-      handler: (input: V2Request, output: V2Response) => input.pipe(output),
+      handler(input, output) {
+        input.pipe(output);
+      }
     },
   },
 };
@@ -171,40 +203,6 @@ const configuration = {
 };
 
 export default configuration;
-```
-
-## Functions API
-
-A function handler receives two arguments, `input` and `output`.
-
-They are the same instances of a normal Node.JS HTTP server, with some additional properties:
-
-```ts
-interface Request extends IncomingMessage {
-  id: string;
-  input: 'text' | 'json' | 'buffer';
-  body: string | object | Buffer;
-  credentials: Record<string, string>;
-  options: Record<string, string>;
-  asText(): Promise<string>;
-  asJson(): Promise<any>;
-  asBuffer(): Promise<Buffer>;
-}
-
-interface Response extends ServerResponse {
-  id: string;
-  request: Request;
-  output: 'text' | 'json' | 'buffer';
-
-  header(name: string, value: string): void;
-  send(body: any): void;
-  send(status: number, body: any): void;
-  reject(message: string): void;
-  pipeTo(nextCommand: string, args: string[]): void;
-  sendText(b: string): void;
-  sendJson(b: any): void;
-  sendBuffer(b: Buffer): void;
-}
 ```
 
 ## Version history

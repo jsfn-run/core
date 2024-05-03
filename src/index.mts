@@ -9,7 +9,6 @@ export function lambda(configuration: Configuration | (<T>(input: Request, outpu
     return new HttpServer({
       actions: {
         action: {
-          input: 'raw',
           default: true,
           handler: configuration,
         },

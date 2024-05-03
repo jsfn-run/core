@@ -60,22 +60,22 @@ interface BaseAction {
 }
 
 interface JsonAction extends BaseAction {
-  input: 'json';
+  input?: 'json';
   handler: ActionHandler<object>;
 }
 
 interface BufferAction extends BaseAction {
-  input: 'buffer';
+  input?: 'buffer';
   handler: ActionHandler<Buffer>;
 }
 
 interface TextAction extends BaseAction {
-  input: 'text';
+  input?: 'text';
   handler: ActionHandler<string>;
 }
 
 interface RawAction extends BaseAction {
-  input: 'raw';
+  input?: 'raw';
   handler: ActionHandler<undefined>;
 }
 
