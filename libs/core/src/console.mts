@@ -34,5 +34,5 @@ export const Console: ColorConsole = {
     if (process.env.DEBUG) {
       console.error(...args);
     }
-  }
+  },
 };

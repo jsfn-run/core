@@ -58,7 +58,6 @@ A more useful example: create a hash from the input text
 import { createHash } from 'node:crypto';
 
 export default {
-  version: 2,
   description: 'Create a hash from the input. Set the "type" option to any Node.js hash algorithm, like sha256',
   actions: {
     createHash: {

@@ -1,0 +1,10 @@
+{
+  "name": "@js-fn/node",
+  "projectType": "library",
+  "targets": {
+    "tsc": {},
+    "build": {
+      "dependsOn": ["tsc"]
+    }
+  }
+}

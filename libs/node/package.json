@@ -1,0 +1,19 @@
+{
+  "name": "@js-fn/node",
+  "version": "0.0.0",
+  "description": "A Node.js client for Lambdas -- https://jsfn.run/",
+  "type": "module",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "author": {
+    "name": "Darlan Alves",
+    "email": "me@darlanalv.es"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6"
+  }
+}

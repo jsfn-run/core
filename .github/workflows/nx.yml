@@ -1,0 +1,33 @@
+name: NX CI
+on:
+  pull_request:
+  push:
+    branches:
+      - nx
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    env:
+      npm_config_prefix: ${{ github.workspace }}/.npm
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci --cache .npm
+
+      - uses: nrwl/nx-set-shas@v4
+      - run: npx nx affected -t test build
+
+      # - run: npx nx-cloud record -- nx format:check

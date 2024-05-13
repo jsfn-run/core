@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "test": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx vitest --no-watch --config vitest.config.ts --dir {projectRoot}"
+      }
+    },
+    "build": {
+      "cache": true,
+      "executor": "nx:noop"
+    },
+    "start": {
+      "cache": false,
+      "dependsOn": ["build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "PORT={args.port} node dist/index.js"
+      }
+    },
+    "tsc": {
+      "cache": true,
+      "dependsOn": ["^tsc"],
+      "executor": "@nx/js:tsc",
+      "options": {
+        "main": "{projectRoot}/src/index.ts",
+        "tsConfig": "{projectRoot}/tsconfig.json",
+        "outputPath": "{projectRoot}/dist",
+        "rootDir": "{projectRoot}/src"
+      }
+    },
+    "rollup": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "npx rollup -c rollup.config.mjs"
+      },
+      "dependsOn": ["tsc", "^tsc"]
+    }
+  },
+  "workspaceLayout": {
+    "appsDir": "apps",
+    "libsDir": "libs"
+  },
+  "cacheDirectory": ".npm/.nx"
+}

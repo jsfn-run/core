@@ -1,0 +1,19 @@
+{
+  "name": "@js-fn/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ci": "npm i --no-fund --no-audit && npm run build"
+  },
+  "devDependencies": {
+    "@cloud-cli/prettier-config": "^1.0.0",
+    "@types/markdown-it": "^13.0.7",
+    "typescript": "^5.3.3",
+    "vite": "^4.5.2"
+  },
+  "dependencies": {
+    "@homebots/parse-html": "^1.1.1",
+    "es-eventdelegate": "^1.0.0",
+    "markdown-it": "^14.0.0"
+  }
+}

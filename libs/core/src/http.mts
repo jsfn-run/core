@@ -3,14 +3,7 @@ import { Console } from './console.mjs';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import type { Action, Configuration, Format, Request, Response } from './types.mjs';
-import {
-  describeApi,
-  generateEsModule,
-  parseOption,
-  readCredentials,
-  setCorsHeaders,
-  timestamp,
-} from './utils.mjs';
+import { describeApi, generateEsModule, parseOption, readCredentials, setCorsHeaders, timestamp } from './utils.mjs';
 
 export class HttpServer {
   server: ReturnType<typeof createServer>;

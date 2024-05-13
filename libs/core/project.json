@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@js-fn/core",
+  "projectType": "library",
+  "targets": {
+    "tsc": {},
+    "build": {
+      "dependsOn": ["tsc"]
+    }
+  }
+}
