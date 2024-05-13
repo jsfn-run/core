@@ -1,4 +1,4 @@
-/* @type {import('@node-lambdas/core').Configuration} */
+/* @type {import('@js-fn/core').Configuration} */
 
 export default {
   actions: {

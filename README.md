@@ -1,10 +1,10 @@
-# @node-lambdas/core
+# @js-fn/core
 
 The main code behind all "function-as-a-service" utilities at [jsfn.run](https://jsfn.run).
 
 ## Introduction
 
-Node Lambdas are tiny HTTP servers that receive an input request and generate an output. Each function has its own web address and works like a regular server.
+Lambdas are tiny HTTP servers that receive an input request and generate an output. Each function has its own web address and works like a regular server.
 
 The main motivation is to make it dead-easy to spin up new services that expose any NPM module or API under the hood.
 
@@ -13,7 +13,7 @@ Instead of installing something, just post it to a Node Lambda!
 
 ## Functions API
 
-A node-lambda is a single `.mjs` file that exports a configuration object.
+A lambda is a single `.mjs` file that exports a configuration object.
 
 A function handler receives two arguments, `input` and `output`.
 
@@ -171,8 +171,6 @@ Accepts multiple actions in a single lambda.
 One of the actions can be marked as default.
 
 ```javascript
-import { lambda, Format } from '@node-lambdas/core';
-
 // encode text as JSON
 function encode(text) {
   return { text };
@@ -183,36 +181,39 @@ function decode(json) {
   return json.text;
 }
 
-const configuration = {
-  version: 2,
-  description: '',
+export default {
+  description: 'Function description',
   actions: {
     encode: {
+      description: 'Encode text',
       default: true,
       input: 'text',
       output: 'json',
-      handler: (input, output) => output.send(encode(input.body)),
+      async handler(input, output) {
+        output.sendJson(encode(await input.asText()))
+      },
     },
 
     decode: {
       input: 'json',
       output: 'text',
-      handler: (input, output) => output.send(decode(input.body)),
+      async handler(input, output) {
+        output.sendText(decode(await input.asJson()));
+      }
     },
   },
 };
-
-export default configuration;
 ```
 
 ## Version history
 
 `v1`
 
-First version. Just process input and send back an output.
+First version. Just process input and send back an output (deprecated)
 
 `v2`
 
 - Add support for multiple actions and different input/output formats per action.
 - Parses the incoming URL
 - adds `request.options` and `request.credentials`
+- exporting a single function is still allowed, but not recommended.

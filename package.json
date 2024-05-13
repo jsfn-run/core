@@ -1,12 +1,12 @@
 {
-  "name": "@node-lambdas/core",
+  "name": "@js-fn/core",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.mjs",
   "typings": "./dist/index.d.mts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/node-lambdas/core.git"
+    "url": "https://github.com/jsfn-run/core.git"
   },
   "publishConfig": {
     "access": "public"
