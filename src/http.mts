@@ -83,18 +83,19 @@ export class HttpServer {
     };
 
     response.sendBuffer = (b: Buffer) => {
-      response.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+      response.writeHead(200, { 'Content-Type': 'application/octet-stream', 'content-length': b.length });
       response.end(b);
     };
 
-    response.sendText = (b: string) => {
-      response.writeHead(200, { 'Content-Type': 'text/plain' });
+    response.sendText = (b: string, type) => {
+      response.writeHead(200, { 'Content-Type': type || 'text/plain', 'content-length': b.length });
       response.end(b);
     };
 
     response.sendJson = (b: any) => {
-      response.writeHead(200, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify(b));
+      const json = JSON.stringify(b);
+      response.writeHead(200, { 'Content-Type': 'application/json', 'content-length': json.length });
+      response.end(json);
     };
   }
 

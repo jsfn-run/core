@@ -28,7 +28,7 @@ export interface Response<T = any> extends ServerResponse {
   reject: (message: string) => void;
   pipeTo: (nextCommand: string) => void;
   sendBuffer: (b: Buffer) => void;
-  sendText: (b: string) => void;
+  sendText: (b: string, type?: string) => void;
   sendJson: (b: any) => void;
 }
 
