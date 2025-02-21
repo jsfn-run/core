@@ -30,15 +30,16 @@ export function generateEsModule(configuration: Configuration, fnName: string) {
   const lines = description.actions.map((_) =>
     [
       _.default ? 'export default ' : '',
-      `async function ${_.name}(i,o = {}) {`,
+      `async function ${_.name}(i,o = {},h = {}) {`,
       `${(_.input === 'json' && 'i=JSON.stringify(i||{});') || ''}`,
-      `const response=await fetch(__url+'/${_.name}?' + __s(o),{mode:'cors',method:'POST',body:i});`,
+      `const response=await fetch(__url+'/${_.name}?' + __s(o),{mode:'cors',headers:__h(h),method:'POST',body:i});`,
       `return ${outputMap[_.output] || 'response'};}`,
     ].join(''),
   );
 
   lines.push(`const __url='https://${fnName}.jsfn.run';`);
   lines.push(`const __s=(o={})=>new URLSearchParams(o).toString();`);
+  lines.push(`const __h = (o = {}) => ({ authorization: btoa(JSON.stringify(o)) });`);
 
   if (description.actions.find((a) => a.output === 'dom')) {
     lines.push(`const __d=(h,t,s,z,d=document)=>{
