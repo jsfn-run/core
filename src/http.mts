@@ -21,8 +21,10 @@ export class HttpServer {
       throw new Error('No actions were provided in the current configuration');
     }
 
-    this.server = createServer((request, response) => this.dispatch(request, response));
-    this.server.listen(process.env.PORT);
+    if (!configuration.deferred) {
+      this.server = createServer((request, response) => this.dispatch(request, response));
+      this.server.listen(process.env.PORT);
+    }
 
     const { actions } = this.configuration;
     this.actions = { ...actions };

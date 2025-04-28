@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 export type Format = 'json' | 'text' | 'buffer' | 'raw' | 'dom';
 
 export interface Configuration {
+  deferred?: boolean;
   description?: string;
   actions: Record<string, Action>;
 }
