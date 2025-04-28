@@ -1,7 +1,5 @@
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { Console } from './console.mjs';
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import type { Action, Configuration, Format, Request, Response } from './types.mjs';
 import {
   describeApi,
@@ -241,12 +239,6 @@ export class HttpServer {
 
   async sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
     const functionName = String(request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
-    const indexFile = process.cwd() + '/index.html';
-    if (existsSync(indexFile)) {
-      const file = await readFile(indexFile, 'utf-8');
-      response.end(file);
-      return;
-    }
 
     response.setHeader('Location', 'https://jsfn.run/?fn=' + functionName);
     response.writeHead(302);
