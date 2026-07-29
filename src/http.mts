@@ -1,14 +1,7 @@
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
 import { Console } from './console.mjs';
 import type { Action, Configuration, Format, Request, Response } from './types.mjs';
-import {
-  describeApi,
-  generateEsModule,
-  parseOption,
-  readCredentials,
-  setCorsHeaders,
-  timestamp,
-} from './utils.mjs';
+import { describeApi, generateEsModule, parseOption, readCredentials, setCorsHeaders, timestamp } from './utils.mjs';
 
 export class HttpServer {
   server: ReturnType<typeof createServer>;
@@ -165,7 +158,7 @@ export class HttpServer {
   }
 
   async sendEsModule(request: IncomingMessage, response: ServerResponse) {
-    const fnName = String(request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
+    const fnName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace('.jsfn.run', '');
     const code = generateEsModule(this.configuration, fnName);
     setCorsHeaders(response);
     response.setHeader('content-type', 'text/javascript');
@@ -238,7 +231,10 @@ export class HttpServer {
   }
 
   async sendLambdaDocumentation(request: IncomingMessage, response: ServerResponse) {
-    const functionName = String(request.headers['x-forwarded-for'] || '').replace('.jsfn.run', '');
+    const functionName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(
+      '.jsfn.run',
+      '',
+    );
 
     response.setHeader('Location', 'https://jsfn.run/?fn=' + functionName);
     response.writeHead(302);
