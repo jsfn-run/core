@@ -3,6 +3,8 @@ import { Console } from './console.mjs';
 import type { Action, Configuration, Format, Request, Response } from './types.mjs';
 import { describeApi, generateEsModule, parseOption, readCredentials, setCorsHeaders, timestamp } from './utils.mjs';
 
+const BASE_DOMAIN = process.env.BASE_DOMAIN || '.jsfn.run';
+
 export class HttpServer {
   server: ReturnType<typeof createServer>;
   readonly actions: Record<string, Action>;
@@ -158,7 +160,7 @@ export class HttpServer {
   }
 
   async sendEsModule(request: IncomingMessage, response: ServerResponse) {
-    const fnName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace('.jsfn.run', '');
+    const fnName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(BASE_DOMAIN, '');
     const code = generateEsModule(this.configuration, fnName);
     setCorsHeaders(response);
     response.setHeader('content-type', 'text/javascript');
