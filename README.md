@@ -69,12 +69,12 @@ export default {
       handler(input, output) {
         const type = input.options.type || 'sha256';
         const hash = createHash(type);
-        input.on('data', c => hash.update(c));
+        input.on('data', (c) => hash.update(c));
         input.on('end', () => output.sendText(hash.digest('hex')));
-      }
-    }
-  }
-}
+      },
+    },
+  },
+};
 ```
 
 ## Function Configurations
@@ -91,7 +91,7 @@ export default {
       default: true,
       handler(input, output) {
         input.pipe(output);
-      }
+      },
     },
   },
 };
@@ -216,3 +216,91 @@ First version. Just process input and send back an output.
 - Add support for multiple actions and different input/output formats per action.
 - Parses the incoming URL
 - adds `request.options` and `request.credentials`
+
+# Docker runner
+
+Node.js runner for cloud functions
+
+## Environment
+
+| name        | type   | description                                       |
+| ----------- | ------ | ------------------------------------------------- |
+| PORT        | number | HTTP port                                         |
+| WORKING_DIR | string | Default: `/home/fn`                               |
+| REPOSITORY  | string | Run from a GH repository, e.g. `org/octocat:main` |
+| SOURCE_URL  | string | URL of a zip or tgz file to download and run      |
+
+## Usage
+
+With docker, run `ghcr.io/jsfn-run/runner:latest` with either `SOURCE_URL` or `REPOSITORY` set.
+
+Example:
+
+```sh
+# Using a function from GitHub source, e.g. my-org/yaml
+docker run --rm -it -e -p3000:3000 REPOSITORY=my-org/yaml ghcr.io/my-org/runner:latest
+
+# Using an URL with a tar or zip file
+docker run --rm -it -e -p3000:3000 SOURCE_URL=https://example.com/fn.zip ghcr.io/jsfn-run/runner:latest
+
+# Using a function in a local folder
+docker run --rm -it -e -p3000:3000 -v $PWD:/home/fn ghcr.io/jsfn-run/runner:latest
+```
+
+## Using as a base image in Docker
+
+The runner can also host multiple functions in a single image. Here's how:
+
+- Create a folder called `functions` and new sub-folders for every function you want to serve
+- Add `index.mjs` or `index.js` in a folder to export the function configuration
+- Optionally, add a `package.json` in that folder if there are dependencies.
+  To keep dependencies in sync and locked, you can also add `package.json` at the root level, and
+  add all function sub-folders a workspace.
+- On the root folder level, create a `Dockerfile`.
+
+  Example:
+
+  ```text
+  |  Dockerfile
+  |  functions/
+  |    foo/
+  |      index.js
+  |    bar/
+  |      index.js
+  |      package.json
+  ```
+
+- Use the following steps:
+
+  ```dockerfile
+  FROM ghcr.io/jsfn-run/runner
+  ENV MULTIPLEXED=true
+
+  COPY --chown=1000:1000 . /home/fn
+  # Recommended if the "workspaces" option was used in package.json
+  RUN cd /home/fn && npm install --omit=dev
+  ```
+
+- Build your Docker image and run it like a regular HTTP server
+
+  ```sh
+  docker build -t runner .
+  ```
+
+- Run the container
+
+  ```sh
+  docker run -d -e PORT=1234 runner
+  curl -X POST -H 'X-Lambda: foo' http://localhost:1234/foo --data-raw 'send this to foo function'
+  ```
+
+### Environment variables:
+
+| name        | type    | description                                                                                 |
+| ----------- | ------- | ------------------------------------------------------------------------------------------- |
+| PORT        | number  | HTTP port                                                                                   |
+| MULTIPLEXED | boolean | Set to `true`                                                                               |
+| BASE_DOMAIN | string  | Defines the top-level domain for function name resolution from host. Default is `.jsfn.run` |
+
+> Note: If `BASE_DOMAIN` is set, then multiple subdomains are used for a single server and every function is mapped to a subdomain.
+> For example, `foo.jsfn.run` is mapped to a call to `foo` in the multiplexed server.
