@@ -6,7 +6,7 @@ import { describeApi, generateEsModule, parseOption, readCredentials, setCorsHea
 const BASE_DOMAIN = process.env.BASE_DOMAIN || '.jsfn.run';
 
 export class HttpServer {
-  server: ReturnType<typeof createServer>;
+  server?: ReturnType<typeof createServer>;
   readonly actions: Record<string, Action>;
 
   constructor(protected configuration: Configuration) {
@@ -95,7 +95,7 @@ export class HttpServer {
   }
 
   readAction(request: Request, response: Response) {
-    const parsedUrl = new URL(request.url, 'http://localhost');
+    const parsedUrl = new URL(request.url!, 'http://localhost');
     const actionName = parsedUrl.pathname.slice(1) || 'default';
     const action = this.actions[actionName] || null;
 
@@ -207,7 +207,7 @@ export class HttpServer {
   }
 
   onSend(response: Response, status: number, value: any) {
-    const body = this.serialize(value, response.output);
+    const body = this.serialize(value, String(response.output) as Format);
 
     response.writeHead(status);
     response.end(body);
@@ -267,7 +267,7 @@ export class HttpServer {
 
   async readStream(stream: any): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const chunks = [];
+      const chunks: any[] = [];
       stream.on('error', reject);
       stream.on('close', reject);
       stream.on('data', (chunk: any) => chunks.push(chunk));

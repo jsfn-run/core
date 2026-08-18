@@ -36,7 +36,7 @@ async function main() {
     }
 
     await startZipRemoteServer(source);
-  } catch (error) {
+  } catch (error: any) {
     Console.error(`Failed to run: ${String(error)}`);
     Console.debug(error.stack);
   }
@@ -166,7 +166,7 @@ async function startServer() {
   const { server } = await loadLambda(fnPath);
 
   Console.info(`[${new Date().toISOString().slice(0, 16)}] started from ${fnPath}`);
-  server.on('close', () => process.exit(1));
+  server!.on('close', () => process.exit(1));
 }
 
 async function startLocalFolderServer(sourceDir: string) {

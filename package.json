@@ -39,5 +39,8 @@
     "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.8.1",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@cloud-cli/exec": "^1.2.1"
   }
 }

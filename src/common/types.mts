@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-export type Format = 'json' | 'text' | 'buffer' | 'raw' | 'dom';
+export type Format = 'json' | 'text' | 'buffer' | 'raw' | 'dom' | 'undefined';
 
 export interface Configuration {
   deferred?: boolean;
@@ -37,14 +37,14 @@ export interface ActionDescription {
   name: string;
   description?: string;
   input: Format;
-  output?: Format;
+  output: Format;
   credentials: string[];
   options: Record<string, string>;
   default?: boolean;
 }
 
 export interface ApiDescription {
-  description: string;
+  description?: string;
   actions: ActionDescription[];
 }
 

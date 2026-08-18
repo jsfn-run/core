@@ -7,7 +7,7 @@ export interface RunOptions {
   credentials?: Record<string, string>;
 }
 
-type Fn = <T extends BodyInit>(input: T) => Promise<Response>;
+type Fn = <T extends RequestInit['body']>(input: T) => Promise<Response>;
 
 export function fn(runOptions: RunOptions): Fn {
   const options = runOptions.options || {};
@@ -25,8 +25,8 @@ export function fn(runOptions: RunOptions): Fn {
     headers.Authorization = 'Bearer ' + token;
   }
 
-  return async function <T extends BodyInit>(body: T) {
-    const duplex = body instanceof ReadableStream ? { duplex: 'half' } : {};
+  return async function <T extends RequestInit['body']>(body: T) {
+    const duplex = body instanceof ReadableStream ? { duplex: 'half' } as any : {};
     const response = await fetch(url, { body, method: 'POST', headers, ...duplex });
 
     if (!response.ok) {
@@ -54,12 +54,12 @@ export function pipe(...fns: Array<RunOptions | Fn>): Fn {
   const last = steps.pop();
 
   return async (input) => {
-    let v: BodyInit = input;
+    let v: RequestInit['body'] = input;
 
     for (const fn of steps) {
       v = (await fn(v)).body;
     }
 
-    return last(v);
+    return last!(v);
   };
 }

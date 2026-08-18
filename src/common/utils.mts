@@ -25,6 +25,9 @@ export function generateEsModule(configuration: Configuration, fnName: string) {
     json: 'response.json()',
     text: 'response.text()',
     dom: '__d(await response.text())',
+    undefined: 'response',
+    raw: 'response',
+    buffer: 'await response.arrayBuffer()',
   };
 
   const lines = description.actions.map((_) =>
@@ -56,7 +59,7 @@ s=d.createElement(n.nodeName.toLowerCase());
 }
 
 const isNumberRe = /^[0-9]+$/;
-export function parseOption(value) {
+export function parseOption(value: any): string | number | boolean {
   if (value === 'true' || value === 'false') {
     return value === 'true';
   }
