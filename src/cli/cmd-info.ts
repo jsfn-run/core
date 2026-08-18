@@ -1,5 +1,5 @@
 import { ApiDescription } from '@node-lambdas/core';
-import { request as httpRequest } from 'node:http';
+import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { baseRequestOptions, buildFunctionUrl, readStream } from './common.js';
 import { CliInputs } from './options.js';
@@ -16,7 +16,7 @@ export function printFunctionApi(inputs: CliInputs) {
   const url = buildFunctionUrl(inputs);
 
   return new Promise((resolve, reject) => {
-    const onResponse = async (response) => {
+    const onResponse = async (response: IncomingMessage) => {
       if (response.statusCode !== 200) {
         reject(new Error('Function not found'));
         return;
@@ -64,7 +64,9 @@ function showApiOptions(json: string, inputs: CliInputs) {
       .map(([key, value]) => ' --' + key + '=<' + value + '>')
       .join(' ');
 
-    output.push(`${Colors.error}fn ${functionName} ${action.name} ${options.length ? Colors.log + options : ''} ${Colors.reset}`);
+    output.push(
+      `${Colors.error}fn ${functionName} ${action.name} ${options.length ? Colors.log + options : ''} ${Colors.reset}`,
+    );
 
     if (action.description) {
       output.push(Colors.log + action.description + Colors.reset);

@@ -57,7 +57,7 @@ export async function runFunction(inputs: CliInputs, input = process.stdin, outp
 
   if (credentials) {
     const token = Buffer.from(JSON.stringify(credentials), 'utf-8').toString('base64');
-    requestOptions.headers.authorization = 'Bearer ' + token;
+    (requestOptions.headers as any).authorization = 'Bearer ' + token;
   }
 
   Console.debug(String(url), requestOptions);

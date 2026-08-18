@@ -23,7 +23,7 @@
       "default": "./dist/common/index.mjs"
     },
     "./node": "./dist/node.mjs",
-    "./runner": "./dist/node.mjs",
+    "./runner": "./dist/runner.mjs",
     "./cli": "./dist/cli/index.mjs"
   },
   "scripts": {
