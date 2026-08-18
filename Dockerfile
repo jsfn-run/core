@@ -1,6 +1,10 @@
+FROM ghcr.io/cloud-cli/node:latest AS builder
+COPY . .
+RUN pnpm i && pnpm build
+
 FROM ghcr.io/cloud-cli/node:latest
-COPY . /home/app
-USER 0
-# USER 1000
+COPY --from=builder /home/app/dist/ ./
 RUN mkdir /home/fn
 ENV WORKING_DIR=/home/fn
+ENTRYPOINT [ "node" ]
+CMD [ "/home/app/runner.mjs" ]
