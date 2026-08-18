@@ -234,7 +234,7 @@ async function loadMultiplexedFunctions(basePath: string) {
     try {
       functions[folder] = await loadLambda(indexFile, true);
       Console.info(`Loaded ${folder} functions from ${fullPath}`);
-    } catch (error) {
+    } catch (error: any) {
       Console.error(`Failed to load ${folder} from ${fullPath}: ${String(error)}`);
       Console.debug(error.stack);
     }

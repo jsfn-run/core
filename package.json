@@ -17,6 +17,15 @@
     "name": "Darlan Alves",
     "email": "me@darlanalv.es"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/common/index.d.ts",
+      "default": "./dist/common/index.mjs"
+    },
+    "./node": "./dist/node.mjs",
+    "./runner": "./dist/node.mjs",
+    "./cli": "./dist/cli/index.mjs"
+  },
   "scripts": {
     "build": "tsc",
     "test": "echo true",

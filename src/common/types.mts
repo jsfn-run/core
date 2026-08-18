@@ -23,7 +23,7 @@ export interface Request<T = any> extends IncomingMessage {
 
 export interface Response<T = any> extends ServerResponse {
   request: Request;
-  output: Format;
+  output?: Format;
   header: (name: string, value: string) => void;
   send: (status: number | T, body?: T) => void;
   reject: (message: string) => void;
@@ -37,7 +37,7 @@ export interface ActionDescription {
   name: string;
   description?: string;
   input: Format;
-  output: Format;
+  output?: Format;
   credentials: string[];
   options: Record<string, string>;
   default?: boolean;
