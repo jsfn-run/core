@@ -25,7 +25,10 @@
   "devDependencies": {
     "@cloud-cli/prettier-config": "^1.0.0",
     "@cloud-cli/typescript-config": "^1.0.1",
-    "@types/node": "^20.4.5",
-    "typescript": "^5.0.4"
+    "@types/node": "^26.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "eslint": "^10.8.1",
+    "typescript": "^6.0.3"
   }
 }
