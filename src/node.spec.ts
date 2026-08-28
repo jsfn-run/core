@@ -1,12 +1,20 @@
 import { createServer } from 'http';
+import type { AddressInfo } from 'node:net';
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import { pipe, fn } from './node.mjs';
 
-const port = 12345;
+let port: number;
 let server: ReturnType<typeof createServer>;
 
 beforeAll(() => {
-  server = createServer((req, res) => req.pipe(res)).listen(port);
+  server = createServer((req, res) => req.pipe(res)).listen(0);
+  return new Promise<void>((resolve, reject) => {
+    server.once('listening', () => {
+      port = (server.address() as AddressInfo).port;
+      resolve();
+    });
+    server.once('error', reject);
+  });
 });
 
 afterAll(() => {
@@ -38,12 +46,12 @@ describe('pipe function calls', () => {
 
     await expect(response).resolves.toBeInstanceOf(Response);
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:12345/encode?', {
+    expect(fetchMock).toHaveBeenNthCalledWith(1, `http://localhost:${port}/encode?`, {
       body: input,
       method: 'POST',
       headers: {},
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:12345/decode?', {
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `http://localhost:${port}/decode?`, {
       body: expect.any(Object),
       method: 'POST',
       duplex: 'half',
