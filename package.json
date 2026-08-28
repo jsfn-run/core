@@ -27,7 +27,7 @@
     "./cli": "./dist/cli/index.mjs"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "vite build",
     "test": "vitest run",
     "test:server": "PORT=3001 node --watch ./test/test.mjs test/encode.mjs"
   },
@@ -39,6 +39,7 @@
     "@typescript-eslint/parser": "^8.68.0",
     "eslint": "^10.9.1",
     "typescript": "^6.0.3",
+    "vite": "^7.1.12",
     "vitest": "^3.2.7"
   },
   "dependencies": {

@@ -135,9 +135,7 @@ function findIndexFile(fnPath: string) {
 }
 
 async function loadLambda(fnPath: string, defer = false) {
-  // bypass code compression rewrite of import() call
-  const i = Function('p', 'return import(p)');
-  const mod = await i(fnPath);
+  const mod = await import(fnPath);
   const def = mod['default'] || mod;
   const configurations =
     typeof def === 'function'
