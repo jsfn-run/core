@@ -1,8 +1,9 @@
 import { createServer } from 'http';
-import { pipe, fn } from '../src/index.js';
+import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
+import { pipe, fn } from './node.mjs';
 
 const port = 12345;
-let server;
+let server: ReturnType<typeof createServer>;
 
 beforeAll(() => {
   server = createServer((req, res) => req.pipe(res)).listen(port);
@@ -31,8 +32,8 @@ describe('pipe function calls', () => {
     const pipeline = pipe(...steps);
     const json = '{"hello": true}';
     const input = new Blob([json]);
-    // const fetch = (globalThis.fetch = jest.fn(() => Promise.resolve(new Response(new Blob([input])))));
-    const fetchMock = jest.spyOn(globalThis, 'fetch');
+    // const fetch = (globalThis.fetch = vi.fn(() => Promise.resolve(new Response(new Blob([input])))));
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
     const response = pipeline(input);
 
     await expect(response).resolves.toBeInstanceOf(Response);
@@ -55,7 +56,7 @@ describe('pipe function calls', () => {
   it('should pipe the input to a local server', async () => {
     const json = JSON.stringify({ number: 1 }, null, 2);
     const input = new Blob([json], { type: 'application/json' });
-    const fetch = (globalThis.fetch = jest.fn(() => Promise.resolve(new Response(input))));
+    const fetch = (globalThis.fetch = vi.fn(() => Promise.resolve(new Response(input))));
 
     const response = await fn({ local: true, port: 2233 })(input);
 
@@ -66,7 +67,7 @@ describe('pipe function calls', () => {
   it('should stop calls if one step returns an error', async () => {
     const input = new Blob(['Invalid input'], { type: 'text/plain' });
     const response = new Response(input, { status: 400, statusText: 'Error' });
-    const fetch = (globalThis.fetch = jest.fn(() => Promise.resolve(response)));
+    const fetch = (globalThis.fetch = vi.fn(() => Promise.resolve(response)));
 
     await await expect(pipe({ local: true }, { name: 'yaml', action: 'encode' })(input)).rejects.toThrowError(
       'Invalid input',

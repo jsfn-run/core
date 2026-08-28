@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { buildFunctionUrl } from './common.js';
 import { CliInputs } from './options.js';
 

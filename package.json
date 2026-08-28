@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "echo true",
+    "test": "vitest run",
     "test:server": "PORT=3001 node --watch ./test/test.mjs test/encode.mjs"
   },
   "devDependencies": {
@@ -38,7 +38,8 @@
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.8.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@cloud-cli/exec": "^1.2.1"

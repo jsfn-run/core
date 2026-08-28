@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { parseOptionsAndParams } from './options';
 
 describe('read options from an array of strings', () => {

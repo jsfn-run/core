@@ -1,8 +1,12 @@
-const mockRequest = jest.fn();
-const mockHttpsRequest = jest.fn();
+import { describe, expect, it, vi } from 'vitest';
 
-jest.mock('node:http', () => ({ request: mockRequest }));
-jest.mock('node:https', () => ({ request: mockHttpsRequest }));
+const { mockRequest, mockHttpsRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn(),
+  mockHttpsRequest: vi.fn(),
+}));
+
+vi.mock('node:http', () => ({ request: mockRequest }));
+vi.mock('node:https', () => ({ request: mockHttpsRequest }));
 
 import { EventEmitter } from 'events';
 import { CliInputs } from './options';
@@ -113,7 +117,7 @@ describe('request API details for a function', () => {
   it('should show the JSON response if an input option was set', async () => {
     const json = '[]';
     setupRequest(200, json);
-    jest.spyOn(console, 'log');
+    vi.spyOn(console, 'log');
 
     const inputs: CliInputs = {
       name: 'fn',
@@ -127,14 +131,14 @@ describe('request API details for a function', () => {
   });
 });
 
-function setupRequest(statusCode, json: string, https = true) {
+function setupRequest(statusCode: number, json: string, https = true) {
   const response: any = new EventEmitter();
   response.statusCode = statusCode;
 
   (https ? mockHttpsRequest : mockRequest).mockImplementation((_a, _b, cb) => {
     cb(response);
     return {
-      end: jest.fn(() => {
+      end: vi.fn(() => {
         response.emit('data', Buffer.from(json));
         response.emit('end');
       }),
