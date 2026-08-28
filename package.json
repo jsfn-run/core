@@ -34,12 +34,12 @@
   "devDependencies": {
     "@cloud-cli/prettier-config": "^1.0.0",
     "@cloud-cli/typescript-config": "^1.0.1",
-    "@types/node": "^26.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.67.0",
-    "@typescript-eslint/parser": "^8.67.0",
-    "eslint": "^10.8.1",
+    "@types/node": "^26.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "eslint": "^10.9.1",
     "typescript": "^6.0.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.7"
   },
   "dependencies": {
     "@cloud-cli/exec": "^1.2.1"
