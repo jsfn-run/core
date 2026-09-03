@@ -5,7 +5,7 @@ import { readdir, writeFile } from 'node:fs/promises';
 import { exec } from '@cloud-cli/exec';
 import { Console, lambda } from './common/index.mjs';
 
-const workingDir = process.env.WORKING_DIR || process.cwd();
+let workingDir = process.env.WORKING_DIR || process.cwd();
 const topLevelDomain = process.env.BASE_DOMAIN || '.jsfn.run';
 
 const repoUrl = (repo: string) => {
@@ -19,11 +19,6 @@ async function main() {
   }
 
   try {
-    if (process.env.MULTIPLEXED) {
-      await startMultiplexedServer();
-      return;
-    }
-
     if (process.env.SOURCE_DIR) {
       await startLocalFolderServer(process.env.SOURCE_DIR);
       return;
@@ -154,6 +149,10 @@ async function loadLambda(fnPath: string, defer = false) {
 }
 
 async function startServer() {
+  if (process.env.MULTIPLEXED) {
+    return await startMultiplexedServer();
+  }
+
   const fnPath = findIndexFile(workingDir);
 
   if (!fnPath) {
@@ -169,6 +168,7 @@ async function startServer() {
 
 async function startLocalFolderServer(sourceDir: string) {
   process.chdir(sourceDir);
+  workingDir = sourceDir;
   await npmInstall();
   await startServer();
 }
