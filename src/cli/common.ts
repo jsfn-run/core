@@ -32,7 +32,7 @@ function getServerUrl(inputs: CliInputs) {
   const port = inputs.options.port || defaultPort;
 
   return new URL(
-    inputs.options.local ? `http://localhost:${port}/` : `https://${getFunctionName(inputs)}.${baseDomain}/`,
+    inputs.options.local ? `http://localhost:${port}/` : `https://${getFunctionName(inputs)}${baseDomain}/`,
   );
 }
 
