@@ -1,7 +1,9 @@
+import process from 'node:process';
 import type { Format, Request, Response, ApiDescription, Configuration } from './types.mjs';
 import { HttpServer } from './http.mjs';
 
 export { Console } from './console.mjs';
+export { baseDomain } from './http.mjs';
 export type { Configuration, Request, Response, Format, ApiDescription };
 
 export function lambda(configuration: Configuration | (<T>(input: Request, output: Response) => Promise<T>)) {

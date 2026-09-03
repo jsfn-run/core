@@ -2,8 +2,9 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { isAbsolute, join } from 'node:path';
 import { readdir, writeFile } from 'node:fs/promises';
-import { Console, lambda } from './common/index.mjs';
+import { baseDomain, Console, lambda } from './common/index.mjs';
 import { spawn, SpawnOptions } from 'node:child_process';
+import process from 'node:process';
 
 function exec(command, args?: string[], options?: SpawnOptions) {
   return new Promise((resolve, reject) => {
@@ -34,7 +35,6 @@ function exec(command, args?: string[], options?: SpawnOptions) {
 }
 
 let workingDir = process.env.WORKING_DIR || process.cwd();
-const topLevelDomain = process.env.BASE_DOMAIN || '.jsfn.run';
 
 const repoUrl = (repo: string) => {
   const [owner, ref = 'main'] = repo.split(':');
@@ -207,7 +207,7 @@ async function startMultiplexedServer() {
   const functions = await loadMultiplexedFunctions(basePath);
   const server = createServer((request, response) => {
     const fn =
-      String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(topLevelDomain, '') ||
+      String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(baseDomain, '') ||
       String(request.headers['x-lambda'] || '');
 
     if (!fn) {
@@ -226,7 +226,9 @@ async function startMultiplexedServer() {
   });
 
   server.on('close', () => process.exit(1));
-  server.listen(process.env.PORT);
+  server.listen(process.env.PORT, () => {
+    Console.info(`[${new Date().toISOString().slice(0, 16)}] multiplexed server started on port ${process.env.PORT}`);
+  });
 }
 
 async function loadMultiplexedFunctions(basePath: string) {

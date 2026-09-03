@@ -1,4 +1,5 @@
-const cloudDomain = process.env.FN_DOMAIN || 'jsfn.run';
+import { baseDomain } from '../common/index.mjs';
+import { type CliInputs } from './options.js';
 
 export const defaultPort = 1234;
 export const baseRequestOptions = {
@@ -16,8 +17,6 @@ export function readStream(stream: any): Promise<Buffer> {
   });
 }
 
-import { CliInputs } from './options.js';
-
 export function buildFunctionUrl(inputs: CliInputs): URL {
   const baseUrl = getServerUrl(inputs);
   const params = new URLSearchParams(inputs.params as Record<string, string>);
@@ -33,7 +32,7 @@ function getServerUrl(inputs: CliInputs) {
   const port = inputs.options.port || defaultPort;
 
   return new URL(
-    inputs.options.local ? `http://localhost:${port}/` : `https://${getFunctionName(inputs)}.${cloudDomain}/`,
+    inputs.options.local ? `http://localhost:${port}/` : `https://${getFunctionName(inputs)}.${baseDomain}/`,
   );
 }
 

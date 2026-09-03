@@ -1,9 +1,9 @@
 import { IncomingMessage, ServerResponse, createServer } from 'node:http';
-import { Console } from './console.mjs';
+import process from 'node:process'; import { Console } from './console.mjs';
 import type { Action, Configuration, Format, Request, Response } from './types.mjs';
 import { describeApi, generateEsModule, parseOption, readCredentials, setCorsHeaders, timestamp } from './utils.mjs';
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || '.jsfn.run';
+export const baseDomain = process.env.BASE_DOMAIN || '.jsfn.run';
 
 export class HttpServer {
   server?: ReturnType<typeof createServer>;
@@ -16,7 +16,9 @@ export class HttpServer {
 
     if (!configuration.deferred) {
       this.server = createServer((request, response) => this.dispatch(request, response));
-      this.server.listen(process.env.PORT);
+      this.server.listen(process.env.PORT, () => {
+        console.log('Server listening on port', process.env.PORT);
+      });
     }
 
     const { actions } = this.configuration;
@@ -160,7 +162,7 @@ export class HttpServer {
   }
 
   async sendEsModule(request: IncomingMessage, response: ServerResponse) {
-    const fnName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(BASE_DOMAIN, '');
+    const fnName = String(request.headers['x-forwarded-host'] || request.headers.host || '').replace(baseDomain, '');
     const code = generateEsModule(this.configuration, fnName);
     setCorsHeaders(response);
     response.setHeader('content-type', 'text/javascript');
