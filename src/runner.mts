@@ -1,9 +1,37 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { readdir, writeFile } from 'node:fs/promises';
-import { exec } from '@cloud-cli/exec';
 import { Console, lambda } from './common/index.mjs';
+import { spawn, SpawnOptions } from 'node:child_process';
+
+function exec(command, args?: string[], options?: SpawnOptions) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, options);
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        return resolve({ stdout, stderr, code, ok: true });
+      }
+
+      const err = new Error(`Process exited with code ${code}`);
+      Object.assign(err, { stdout, stderr, code, ok: false });
+      reject(err);
+    });
+  });
+}
 
 let workingDir = process.env.WORKING_DIR || process.cwd();
 const topLevelDomain = process.env.BASE_DOMAIN || '.jsfn.run';
@@ -85,7 +113,7 @@ async function npmInstall(path: string = workingDir) {
   Console.info(`Installing dependencies from ${path}`);
   const npmi = await exec('npm', ['i', '--no-audit', '--no-fund'], { cwd: path });
 
-  if (npmi.code !== 0) {
+  if (!npmi.ok) {
     Console.log(npmi.stdout);
     Console.error(npmi.stderr);
     throw new Error(`Failed to install dependencies`);
@@ -174,7 +202,7 @@ async function startLocalFolderServer(sourceDir: string) {
 }
 
 async function startMultiplexedServer() {
-  const basePath = workingDir.startsWith('/') ? workingDir : join(process.cwd(), workingDir);
+  const basePath = isAbsolute(workingDir) ? workingDir : join(process.cwd(), workingDir);
   Console.info(`Running in multiplexed mode from ${basePath}`);
   const functions = await loadMultiplexedFunctions(basePath);
   const server = createServer((request, response) => {
