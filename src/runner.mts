@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtemp } from 'node:fs';
 import { createServer } from 'node:http';
 import { isAbsolute, join } from 'node:path';
 import { readdir, writeFile } from 'node:fs/promises';
@@ -34,18 +34,12 @@ function exec(command, args?: string[], options?: SpawnOptions) {
   });
 }
 
-let workingDir = process.env.WORKING_DIR || process.cwd();
-
 const repoUrl = (repo: string) => {
   const [owner, ref = 'main'] = repo.split(':');
   return `https://codeload.github.com/${owner}/zip/refs/heads/${ref}`;
 };
 
 async function main() {
-  if (!existsSync(workingDir)) {
-    mkdirSync(workingDir, { recursive: true });
-  }
-
   try {
     if (process.env.SOURCE_DIR) {
       await startLocalFolderServer(process.env.SOURCE_DIR);
@@ -77,12 +71,13 @@ function getSourceUrl() {
   return source;
 }
 
-async function extractFile(filePath: string) {
+async function extractFile(filePath: string, target: string) {
   let ps: any;
+  const tmpDir = mkdtemp('fn');
 
   switch (true) {
     case filePath.endsWith('.tgz'):
-      ps = await exec('tar', ['xzf', workingDir, filePath]);
+      ps = await exec('tar', ['xzf', tmpDir, filePath]);
 
       if (!ps.ok) {
         throw new Error('Unable to extract file: ' + ps.stderr);
@@ -91,7 +86,7 @@ async function extractFile(filePath: string) {
       break;
 
     case filePath.endsWith('.zip'):
-      ps = await exec('unzip', ['-o', '-d', workingDir, filePath]);
+      ps = await exec('unzip', ['-o', '-d', tmpDir, filePath]);
 
       if (!ps.ok) {
         throw new Error('Unable to extract file: ' + ps.stderr);
@@ -102,16 +97,25 @@ async function extractFile(filePath: string) {
     default:
       throw new Error(`Unsupported file format at ${filePath}`);
   }
+
+  ps = await exec('find', [tmpDir, '-name', 'functions', '-type', 'd']);
+  if (!ps.ok || !ps.stdout) {
+    throw new Error(`Invalid file content at ${filePath}`);
+  }
+
+  const functionsPath = ps.stdout.trim();
+  await exec('mv', [functionsPath, target]);
+  await exec('rm', ['-r', tmpDir]);
 }
 
-async function npmInstall(path: string = workingDir) {
+async function npmInstall(path: string) {
   if (!existsSync(join(path, 'package.json'))) {
-    Console.info(`Unable to find package.json at ${workingDir}`);
+    Console.info(`Unable to find package.json at ${path}`);
     return;
   }
 
   Console.info(`Installing dependencies from ${path}`);
-  const npmi = await exec('npm', ['i', '--no-audit', '--no-fund'], { cwd: path });
+  const npmi = await exec('npm', ['i', '--omit=dev', '--no-audit', '--no-fund'], { cwd: path });
 
   if (!npmi.ok) {
     Console.log(npmi.stdout);
@@ -122,7 +126,7 @@ async function npmInstall(path: string = workingDir) {
   Console.log(npmi.stdout);
 }
 
-async function download(url: string) {
+async function download(url: string): Promise<string> {
   let extension = '';
 
   if (url.endsWith('.tgz') || url.endsWith('.tar.gz')) {
@@ -157,8 +161,8 @@ function findIndexFile(fnPath: string) {
   return ['index.mjs', 'index.js'].map((p) => join(fnPath, p)).find((p) => existsSync(p));
 }
 
-async function loadLambda(fnPath: string, defer = false) {
-  const mod = await import(fnPath);
+async function loadLambda(entrypoint: string, defer = false) {
+  const mod = await import(entrypoint);
   const def = mod['default'] || mod;
   const configurations =
     typeof def === 'function'
@@ -176,12 +180,12 @@ async function loadLambda(fnPath: string, defer = false) {
   return lambda(fn);
 }
 
-async function startServer() {
+async function startServer(path: string) {
   if (process.env.MULTIPLEXED) {
-    return await startMultiplexedServer();
+    return await startMultiplexedServer(path);
   }
 
-  const fnPath = findIndexFile(workingDir);
+  const fnPath = findIndexFile(path);
 
   if (!fnPath) {
     throw new Error('Cannot run lambda: entrypoint not found.');
@@ -194,15 +198,8 @@ async function startServer() {
   server!.on('close', () => process.exit(1));
 }
 
-async function startLocalFolderServer(sourceDir: string) {
-  process.chdir(sourceDir);
-  workingDir = sourceDir;
-  await npmInstall();
-  await startServer();
-}
-
-async function startMultiplexedServer() {
-  const basePath = isAbsolute(workingDir) ? workingDir : join(process.cwd(), workingDir);
+async function startMultiplexedServer(path: string) {
+  const basePath = isAbsolute(path) ? path : join(process.cwd(), path);
   Console.info(`Running in multiplexed mode from ${basePath}`);
   const functions = await loadMultiplexedFunctions(basePath);
   const server = createServer((request, response) => {
@@ -245,8 +242,8 @@ async function loadMultiplexedFunctions(basePath: string) {
 
   for (const folder of list) {
     const fullPath = join(functionsPath, folder);
-
     const indexFile = findIndexFile(fullPath);
+
     if (!indexFile) {
       Console.error(`Folder ${fullPath} ignored. No entrypoint found.`);
       continue;
@@ -271,11 +268,17 @@ async function loadMultiplexedFunctions(basePath: string) {
   return functions;
 }
 
-async function startZipRemoteServer(source: string) {
-  const filePath = await download(source);
-  await extractFile(filePath);
-  await npmInstall();
-  await startServer();
+async function startLocalFolderServer(sourceDir: string) {
+  await npmInstall(sourceDir);
+  await startServer(sourceDir);
+}
+
+async function startZipRemoteServer(sourceURL: string) {
+  const workingDir = process.cwd();
+  const filePath = await download(sourceURL);
+  await extractFile(filePath, workingDir);
+  await npmInstall(workingDir);
+  await startServer(workingDir);
 }
 
 main();
