@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync, mkdtemp } from 'node:fs';
+import { spawn, SpawnOptions } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { mkdtemp, readdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { isAbsolute, join } from 'node:path';
-import { readdir, writeFile } from 'node:fs/promises';
-import { baseDomain, Console, lambda } from './common/index.mjs';
-import { spawn, SpawnOptions } from 'node:child_process';
 import process from 'node:process';
+import { baseDomain, Console, lambda } from './common/index.mjs';
 
 function exec(command, args?: string[], options?: SpawnOptions) {
   return new Promise((resolve, reject) => {
@@ -99,6 +99,7 @@ async function extractFile(filePath: string, target: string) {
   }
 
   ps = await exec('find', [tmpDir, '-name', 'functions', '-type', 'd']);
+
   if (!ps.ok || !ps.stdout) {
     throw new Error(`Invalid file content at ${filePath}`);
   }
